@@ -1,35 +1,31 @@
-<script setup lang="ts">
-import { useForm } from 'vee-validate';
-import * as yup from 'yup';
+<script lang="ts">
+import { ref } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+export default {
+  name: "RegisterComponent",
+ setup() {
+    const name = ref('')
+    const email = ref('')
+    const password = ref('')
+    const error = ref(null)
 
-const schema = yup.object({
-  email: yup.string().required().email().label('Email address'),
-  fullName: yup.string().required().label('Full name').matches(/^[a-zA-Z ]+$/),
-  password: yup.string().required().min(6).label('Password').matches(/^.{6,20}$/),
-  passwordConfirm: yup
-    .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required()
-    .label('Password confirmation'),
-});
+    const store = useStore()
+    const router = useRouter()
 
-const { defineField, handleSubmit, resetForm, errors } = useForm({
-  validationSchema: schema,
-});
-
-const [fullName] = defineField('fullName');
-const [email] = defineField('email');
-const [password] = defineField('password');
-const [passwordConfirm] = defineField('passwordConfirm');
-
-
-const onSubmit = handleSubmit((values) => {
-  console.log('Submitted with', values);
-});
-
-
+    const Register = async () => {
+      console.log(email.value)
+        await store.dispatch('register', {
+          email: email.value,
+          password: password.value,
+          name: name.value
+        })
+        router.push('/')
+    }
+    return { Register, name,email, password, error }
+  }
+};
 </script>
-
 <template>
 <div class="center-content">
 <div class="surface-card p-4 shadow-3 border-round w-full lg:w-4">
@@ -46,27 +42,24 @@ const onSubmit = handleSubmit((values) => {
     </div>
 
     
-    <form @submit="onSubmit">
+    <form @submit.prevent="Register">
         <div class="field">
         <IconField iconPosition="left" class="mb-3">
             <InputIcon class="pi pi-envelope"></InputIcon>
-            <InputText v-model="email" :class="{ 'p-invalid': errors.email}" type="email" placeholder="Enter Your Email" />
+            <InputText type="email" v-model="email" placeholder="Enter Your Email" />
         </IconField>
-        <small id="email-help" class="p-error">
-            {{ errors.email }}
-          </small>
         </div>
 
 
         <IconField iconPosition="left" class="mb-3">
             <InputIcon class="pi pi-user"></InputIcon>
-            <InputText type="email" placeholder="Enter Your Full Name" />
+            <InputText type="text" v-model="name" placeholder="Enter Your Full Name" />
         </IconField>
         
 
         <IconField iconPosition="left" class="mb-5">
             <InputIcon class="pi pi-key"></InputIcon>
-            <InputText id="email1" type="text" placeholder="Enter Your Password" />
+            <InputText id="email1" v-model="password" type="password" placeholder="Enter Your Password" />
         </IconField>
    
 
