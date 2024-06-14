@@ -55,6 +55,8 @@ const store = createStore({
           const response = await signInWithEmailAndPassword(auth, email, password)
           if (response) {
               context.commit('SET_USER', response.user)
+              console.log(auth.currentUser)
+              console.log("Login Successful")
           } else {
               throw new Error('Login failed')
           }

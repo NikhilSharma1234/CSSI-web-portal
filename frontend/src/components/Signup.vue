@@ -73,11 +73,11 @@ const onSubmit = handleSubmit(async () => {
         <img src="../assets/unr2.png" alt="Image" height="50" class="mb-3" />
         <div class="text-900 text-3xl font-medium mb-3">Create your account</div>
         <span class="text-600 font-medium line-height-4">Already have an account?</span>
-        <a class="font-medium no-underline ml-2 text-blue-500 cursor-pointer p-ripple" v-ripple>Login</a>
+        <RouterLink to="/login" class="no-underline " ><a class="font-semibold no-underline ml-2 text-blue-400 cursor-pointer p-ripple" v-ripple>Login</a></RouterLink>
         <div class="text-600 font-medium mb-3 mt-3">Or</div>
         <Button @click="signInWithGoogle()" label="Sign up with Google" severity="secondary" raised>
     <img src="../assets/google.png" alt="Google Logo" style="width: 24px; height: 24px; margin-right: 8px;" />
-    Sign up with Google
+    Sign in with Google
   </Button>
     </div>
 
