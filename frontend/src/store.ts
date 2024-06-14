@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { createStore } from 'vuex'
 import { auth } from './firebaseAuth';
 
@@ -35,13 +35,28 @@ const store = createStore({
                 throw new Error('Unable to register user')
             }
         },
-  
+
+        async signInWithGoogle(context) {
+          try {
+            const provider = new GoogleAuthProvider();
+            const response = await signInWithPopup(auth, provider);
+            if (response) {
+              context.commit('SET_USER', response.user);
+              // Optionally, update user profile here if needed
+            } else {
+              throw new Error('Unable to sign in with Google');
+            }
+          } catch (error) {
+            throw new Error('Unable to sign in with Google');
+          }
+        },
+    
         async logIn(context, { email, password }){
           const response = await signInWithEmailAndPassword(auth, email, password)
           if (response) {
               context.commit('SET_USER', response.user)
           } else {
-              throw new Error('login failed')
+              throw new Error('Login failed')
           }
       },
   
@@ -60,7 +75,9 @@ const store = createStore({
         } else {
           context.commit("SET_USER", null);
         }
-    }
+    },
+    
+
     }
 })
 
