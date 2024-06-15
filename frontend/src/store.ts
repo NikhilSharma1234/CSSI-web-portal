@@ -53,6 +53,7 @@ const store = createStore({
     
         async logIn(context, { email, password }){
           const response = await signInWithEmailAndPassword(auth, email, password)
+          console.log(response)
           if (response) {
               context.commit('SET_USER', response.user)
               console.log(auth.currentUser)
