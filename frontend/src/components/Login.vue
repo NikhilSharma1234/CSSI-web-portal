@@ -56,6 +56,10 @@ const onSubmit = handleSubmit(async () => {
     }, 2000)
   }
 })
+
+const routeToForgotPassword = () => {
+  router.push('/forgotpassword')
+}
 </script>
 
 <template>
@@ -100,7 +104,8 @@ const onSubmit = handleSubmit(async () => {
             <Checkbox id="rememberme1" :binary="true" v-model="checked" class="mr-2"></Checkbox>
             <label for="rememberme1">Remember me</label>
           </div>
-          <a class="font-semibold no-underline ml-2 text-blue-400 cursor-pointer p-ripple">Forgot password?</a>
+          <a @click="routeToForgotPassword"
+            class="font-semibold no-underline ml-2 text-blue-400 cursor-pointer p-ripple">Forgot password?</a>
         </div>
         <div class="text-center mb-2">
           <small id="fullName-help" class="p-error">{{ error }}</small>
