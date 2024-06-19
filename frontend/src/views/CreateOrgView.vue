@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import About from '../components/About.vue'
+import CreateOrg from '../components/CreateOrg.vue'
 </script>
 
 <template>
   <main>
-<About/>
+  <CreateOrg/>
 </main>
 </template>
 

@@ -47,7 +47,7 @@ const schema = yup.object({
 
 
 
-const { errors, validate, defineField , handleSubmit } = useForm({
+const { errors, validate, defineField } = useForm({
   validationSchema: schema
 });
 
@@ -71,7 +71,12 @@ const validateStep1 = async (nextCallback: any) => {
 const validateStep2 = async (nextCallback: any) => {
   await validate();
   if (!Object.keys(errors.value).length) {
-    nextCallback();
+    loading.value = true;
+    setTimeout(() => {
+        loading.value = false;
+        createOrganization();
+        nextCallback();
+    }, 2000);
   } else {
     console.log('Validation failed:', errors.value);
   }
@@ -87,23 +92,12 @@ const createOrganization = async () => {
         orgName: orgName.value,
         description: description.value,
   });
-  router.push('/');
 }
 
 
-
-
-const onSubmit = handleSubmit(async () => {
-    console.log('Validating')
-  await validate();
-  if (!Object.keys(errors.value).length) {
-  loading.value = true;
-  setTimeout(() => {
-        loading.value = false;
-        createOrganization();
-    }, 2000);
+const routePage = async () => {
+  router.push('/')
 }
-});
 
 
 </script>
@@ -118,7 +112,7 @@ const onSubmit = handleSubmit(async () => {
  <div class="card width p-4 shadow-3 border-round">
   <div class="text-center mb-6">
   <h2 >Organization Required</h2>
-  <p label="dan" class="text-500 font-light line-height-2">You are currently not a part of an organization. To proceed, you can either create your own organization or <RouterLink to="/login" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >join a pre-existing one</a></RouterLink>.</p>
+  <p label="dan" class="text-500 line-height-2">You are currently not a part of an organization. To proceed, you can either create your own organization or <RouterLink to="joinorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >join a pre-existing one</a></RouterLink>.</p>
   <Divider/>
       </div>
 
@@ -153,7 +147,7 @@ const onSubmit = handleSubmit(async () => {
                         </div>
                     </div>
                     <div class="flex pt-4 justify-content-end">
-                        <Button label="Next" :loading="loading" icon="pi pi-arrow-right" type="submit" @click="" iconPos="right"/>
+                        <Button label="Next" :loading="loading" icon="pi pi-arrow-right" type="submit" iconPos="right"/>
                     </div>
                 </form>
                 </template>
@@ -190,7 +184,7 @@ const onSubmit = handleSubmit(async () => {
                     </div>
                     <div class="flex pt-4 justify-content-between">
                         <Button label="Back" raised severity="secondary" icon="pi pi-arrow-left" @click="prevCallback" />
-                        <Button label="Next" raised icon="pi pi-arrow-right" iconPos="right" @click="validateStep2(nextCallback)" />
+                        <Button label="Create Organization" raised :loading="loading"  iconPos="right" @click="validateStep2(nextCallback)" />
                     </div>
                 </template>
             </StepperPanel>
@@ -206,7 +200,7 @@ const onSubmit = handleSubmit(async () => {
                     <div class="flex flex-column gap-2 mx-auto" style="min-height: 16rem; max-width: 24rem">
                         <div class="text-center mt-3 text-xl font-semibold">Invite Others To Organization (Optional)</div>
                         <div class="text-center mt-5">
-                            <Button type="button" icon="pi pi-image" label="Invite Others via Email" @click="toggle" />
+                            <Button type="button" outlined icon="pi pi-image" label="Invite Others via Email" @click="toggle" />
                             <OverlayPanel ref="op">
             <div class="flex flex-column gap-3 w-25rem">
                 <div>
@@ -236,9 +230,8 @@ const onSubmit = handleSubmit(async () => {
         </OverlayPanel>
                         </div>
                     </div>
-                    <div class="flex pt-4 justify-content-between">
-                        <Button label="Back" raised severity="secondary" icon="pi pi-arrow-left" @click="prevCallback" />
-                        <Button label="Create"  raised :loading="loading" @click="onSubmit" iconPos="right" ></Button>
+                    <div class="flex pt-4 justify-content-end">
+                        <Button label="To Dashboard" raised @click="routePage" iconPos="right" ></Button>
                     </div>
                    
                 </template>

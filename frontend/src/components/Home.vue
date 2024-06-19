@@ -15,7 +15,7 @@ auth.onAuthStateChanged(function (user) {
 <template>
   <div class="center-content">
     <Sidebar />
-    <RouterLink to="about"><Button label="To About"></Button></RouterLink>
+    <RouterLink to="createorg"><Button label="Join/Create Organization"></Button></RouterLink>
     <RouterView />
     <h1>Hello, this is our home page!</h1>
   </div>
