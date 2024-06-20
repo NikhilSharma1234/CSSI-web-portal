@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import AboutView from '../views/AboutView.vue'
+import CreateOrgView from '../views/CreateOrgView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
-import ForgotPassword from '@/views/ForgotPassword.vue'
+import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
+import JoinOrgView from '@/views/JoinOrgView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,9 +15,9 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/about',
-      name: 'About',
-      component: AboutView
+      path: '/createorg',
+      name: 'CreateOrg',
+      component: CreateOrgView
     },
     {
       path: '/login',
@@ -31,8 +32,13 @@ const router = createRouter({
     {
       path: '/forgotpassword',
       name: 'Forgot Password',
-      component: ForgotPassword
-    }
+      component: ForgotPasswordView
+    },
+    {
+      path: '/joinorg',
+      name: 'JoinOrg',
+      component: JoinOrgView
+    },
   ]
 })
 

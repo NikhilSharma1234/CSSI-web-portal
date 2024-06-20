@@ -55,7 +55,7 @@ const onSubmit = handleSubmit(async () => {
 
       <form @submit.prevent="onSubmit">
         <div class="field">
-          <label class="text-900 font-medium mb-2">Email</label>
+          <label class="text-900 font-medium ">Email</label>
           <IconField iconPosition="left">
             <InputIcon class="pi pi-envelope"></InputIcon>
             <InputText class="w-full weight" type="email" v-model="email" :class="{ 'p-invalid': errors.email }"
@@ -66,7 +66,7 @@ const onSubmit = handleSubmit(async () => {
         <div class="text-center mb-2">
           <small id="fullName-help" class="p-error">{{ error }}</small>
         </div>
-        <Button :loading="loading" label="Send Password Reset Email" icon="pi pi-user" class="w-full height"
+        <Button :loading="loading" label="Send Password Reset Email" icon="pi pi-user" class="w-full height mt-3"
           type="submit" />
       </form>
     </div>
