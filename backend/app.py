@@ -31,10 +31,9 @@ def users():
         post_data = request.get_json()
         name = post_data.get('name')
         email = post_data.get('email')
-        password = post_data.get('password')
-        cur.execute('INSERT INTO users (name, email, password)'
-                    'VALUES (%s, %s, %s)',
-                    (name, email, password))
+        cur.execute('INSERT INTO users (name, email)'
+                    'VALUES (%s, %s)',
+                    (name, email))
         conn.commit()
         cur.close()
         conn.close()
