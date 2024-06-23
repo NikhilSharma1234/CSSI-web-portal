@@ -206,7 +206,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
           <hr class="mb-3 mx-3 border-top-3 border-none surface-border" />
           <a class="m-2 flex align-items-center p-3 gap-2 border-round text-700">
             <Avatar image="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png" shape="circle" />
-            <span class="font-bold mr-4">Kaden Nesch</span>
+            <span class="font-bold mr-4">{{ store.state.user ? store.state.user['displayName'] : '' }}</span>
             <span class="pi pi-moon" style="font-size: 1.2rem"></span>
             <InputSwitch v-model="checked" @change="toggleTheme">Switch Theme</InputSwitch>
             <span class="pi pi-sun" style="font-size: 1.3rem"></span>

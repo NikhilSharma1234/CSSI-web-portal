@@ -1,27 +1,22 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, getAdditionalUserInfo, type User } from 'firebase/auth';
 import { createStore } from 'vuex'
 import { auth } from './firebaseAuth';
+import { registerUserInDb } from './helpers';
 
 const store = createStore({
   state() {
     return {
-      user: {
-        loggedIn: false,
-        data: null
-      }
+      user: null
     }
   },
   getters: {
-    user(state) {
+    user(state): User | null {
       return state.user
     }
   },
   mutations: {
-    SET_LOGGED_IN(state, value) {
-      state.user.loggedIn = value;
-    },
     SET_USER(state, data) {
-      state.user.data = data;
+      state.user = data;
     }
   },
   actions: {
@@ -31,6 +26,7 @@ const store = createStore({
       if (response) {
         context.commit('SET_USER', response.user)
         await updateProfile(response.user, { displayName: name });
+        await registerUserInDb(response.user);
       } else {
         throw new Error('Unable to register user')
       }
@@ -43,6 +39,9 @@ const store = createStore({
         if (response) {
           context.commit('SET_USER', response.user);
           // Optionally, update user profile here if needed
+          if (getAdditionalUserInfo(response)?.isNewUser && auth.currentUser) {
+            await registerUserInDb(auth.currentUser)
+          }
         } else {
           throw new Error('Unable to sign in with Google');
         }
@@ -66,18 +65,6 @@ const store = createStore({
     async logOut(context) {
       await signOut(auth)
       context.commit('SET_USER', null)
-    },
-
-    async fetchUser(context, user) {
-      context.commit("SET_LOGGED_IN", user !== null);
-      if (user) {
-        context.commit("SET_USER", {
-          displayName: user.displayName,
-          email: user.email
-        });
-      } else {
-        context.commit("SET_USER", null);
-      }
     },
     async sendResetEmail(context, { email }) {
       await sendPasswordResetEmail(auth, email)
