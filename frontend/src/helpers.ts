@@ -13,3 +13,16 @@ export async function registerUserInDb(user: User) {
         console.log(e)
     })
 }
+
+export async function checkServerHealth(): Promise<boolean> {
+    const path = (import.meta.env.VITE_DB_URL + '/health')
+    var serverDown = false
+    try {
+        await axios.get(path).then((response) => {
+            serverDown = response.data
+        })
+    } catch {
+        serverDown = true
+    }
+    return serverDown
+}

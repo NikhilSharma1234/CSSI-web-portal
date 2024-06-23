@@ -21,9 +21,9 @@ app.config.from_object(__name__)
 CORS(app, resources={r'/*': {'origins': '*'}})
 
 
-# sanity check route
+# user route
 @app.route('/user', methods=['GET', 'POST'])
-def users():
+def user():
     conn = get_db_connection()
     cur = conn.cursor()
     response_object = {'status': 'success'}
@@ -47,6 +47,16 @@ def users():
         response_object['users'] = users
         response_object['message'] = 'Users returned!'
     return jsonify(response_object)
+
+# health route
+@app.route('/health', methods=['GET'])
+def health():
+    try:
+        conn = get_db_connection()
+        conn.close()
+        return jsonify(False)
+    except:
+        return jsonify(True)
 
 
 if __name__ == '__main__':
