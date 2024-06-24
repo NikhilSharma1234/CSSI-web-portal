@@ -2,12 +2,16 @@
 import { auth } from '@/firebaseAuth'
 import router from '@/router'
 import Sidebar from './side-bar.vue'
+import store from '@/store';
 
 auth.onAuthStateChanged(function (user) {
   if (!user) {
     // not logged in
     alert('Logged out. Returning to login.')
     router.push('/login')
+  }
+  else {
+    store.commit('SET_USER', user)
   }
 })
 </script>
