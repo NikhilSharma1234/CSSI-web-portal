@@ -128,7 +128,6 @@ const requestOrganization = async () => {
   display: flex;
   justify-content: center; /* Centers the child div horizontally */
   align-items: center; /* Centers the child div vertically */
-  height: 100vh; /* Makes the container take the full viewport height */
 }
 
 
