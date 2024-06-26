@@ -12,6 +12,85 @@ const themes = ref(['aura-light-cyan', 'aura-dark-cyan']);
 const visible = ref(false);
 const checked = ref(false);
 
+const organizations = ref([
+  {
+    name: 'Tech Solutions Inc.',
+    items: [
+      { name: 'Dashboard' },
+      {
+        name: 'Applications',
+        items: [
+          { name: 'Dashboard' },
+          {
+            name: 'Sensors',
+            items: [
+              { name: 'Home-Temp1'},
+              { name: 'Office-Temp2'},
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Innovative Minds LLC',
+    items: [
+      { name: 'Dashboard' },
+      {
+        name: 'Applications',
+        items: [
+          { name: 'Dashboard' },
+          {
+            name: 'Sensors',
+            items: [
+              { name: 'Lab-Temp1'},
+              { name: 'Field-Temp2'},
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Global Enterprises Ltd.',
+    items: [
+      { name: 'Dashboard' },
+      {
+        name: 'Applications',
+        items: [
+          { name: 'Dashboard' },
+          {
+            name: 'Sensors',
+            items: [
+              { name: 'Warehouse-Temp1'},
+              { name: 'Shipping-Temp2'},
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Future Vision Corp.',
+    items: [
+      { name: 'Dashboard' },
+      {
+        name: 'Applications',
+        items: [
+          { name: 'Dashboard' },
+          {
+            name: 'Sensors',
+            items: [
+              { name: 'Factory-Temp1'},
+              { name: 'Office-Temp2'},
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]);
+
 function toggleTheme() {
   const newTheme = themeStore.currentTheme === themes.value[0] ? themes.value[1] : themes.value[0];
   PrimeVue.changeTheme(themeStore.currentTheme, newTheme, 'theme-link', () => {
@@ -24,7 +103,6 @@ const logout = async () => {
   await store.dispatch('logOut')
 }
 
-
 onMounted(() => {
   checked.value = themeStore.currentTheme === themes.value[0];
 });
@@ -36,7 +114,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
 </script>
 
 <template>
-  <Sidebar v-model:visible="visible" class="sidebar">
+  <Sidebar v-model:visible="visible">
     <template #container="{ closeCallback }">
       <div class="flex flex-column h-full py-2">
         <div class="flex align-items-center px-6">
@@ -58,112 +136,71 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                 leaveToClass: 'hidden',
                 leaveActiveClass: 'slideup'
               }" class="p-3 flex align-items-center justify-content-between text-600 cursor-pointer p-ripple">
-                <span class="font-medium">FAVORITES</span>
+                <span class="font-medium">ORGANIZATIONS</span>
                 <i class="pi pi-chevron-down"></i>
               </div>
               <ul class="list-none p-0 m-0 overflow-hidden">
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-home mr-2"></i>
-                    <span class="font-medium">Dashboard</span>
-                  </a>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-bookmark mr-2"></i>
-                    <span class="font-medium">Bookmarks</span>
-                  </a>
-                </li>
-                <li>
+                <li v-for="org in organizations" :key="org.name">
                   <a v-ripple v-styleclass="{
                     selector: '@next',
                     enterClass: 'hidden',
                     enterActiveClass: 'slidedown',
                     leaveToClass: 'hidden',
                     leaveActiveClass: 'slideup'
-                  }"
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-chart-line mr-2"></i>
-                    <span class="font-medium">Reports</span>
+                  }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                    <i class="pi pi-folder mr-2"></i>
+                    <span class="font-medium">{{ org.name }}</span>
                     <i class="pi pi-chevron-down ml-auto"></i>
                   </a>
-                  <ul
-                    class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
-                    <li>
+                  <ul class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+                    <li v-for="item in org.items" :key="item.name">
                       <a v-ripple v-styleclass="{
                         selector: '@next',
                         enterClass: 'hidden',
                         enterActiveClass: 'slidedown',
                         leaveToClass: 'hidden',
                         leaveActiveClass: 'slideup'
-                      }"
-                        class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                        <i class="pi pi-chart-line mr-2"></i>
-                        <span class="font-medium">Revenue</span>
-                        <i class="pi pi-chevron-down ml-auto"></i>
+                      }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                        <i :class="item.name === 'Dashboard' ? 'pi pi-chart-bar'+ ' mr-2' : 'pi pi-folder-open'  + ' mr-2'"></i>
+                        <span class="font-medium">{{ item.name }}</span>
+                        <i v-if="item.items && item.name !== 'Dashboard'" class="pi pi-chevron-down ml-auto"></i>
                       </a>
-                      <ul
-                        class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
-                        <li>
-                          <a v-ripple
-                            class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                            <i class="pi pi-table mr-2"></i>
-                            <span class="font-medium">View</span>
+                      <ul v-if="item.items" class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+                        <li v-for="subItem in item.items" :key="subItem.name">
+                          <a v-ripple v-styleclass="{
+                            selector: '@next',
+                            enterClass: 'hidden',
+                            enterActiveClass: 'slidedown',
+                            leaveToClass: 'hidden',
+                            leaveActiveClass: 'slideup'
+                          }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                            <i :class="subItem.name === 'Dashboard' ? 'pi pi-chart-bar'+ ' mr-2' : 'pi pi-th-large'  + ' mr-2'"></i>
+                            <span class="font-medium">{{ subItem.name }}</span>
+                            <i v-if="subItem.items" class="pi pi-chevron-down ml-auto"></i>
                           </a>
-                        </li>
-                        <li>
-                          <a v-ripple
-                            class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                            <i class="pi pi-search mr-2"></i>
-                            <span class="font-medium">Search</span>
-                          </a>
+                          <ul v-if="subItem.items" class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+                            <li v-for="sensor in subItem.items" :key="sensor.name">
+                              <a v-ripple v-styleclass="{
+                                selector: '@next',
+                                enterClass: 'hidden',
+                                enterActiveClass: 'slidedown',
+                                leaveToClass: 'hidden',
+                                leaveActiveClass: 'slideup'
+                              }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                                <i class="pi pi-wave-pulse mr-2"></i>
+                                <span class="font-medium">{{ sensor.name }}</span>
+                              </a>
+                            </li>
+                          </ul>
                         </li>
                       </ul>
                     </li>
-                    <li>
-                      <a v-ripple
-                        class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                        <i class="pi pi-chart-line mr-2"></i>
-                        <span class="font-medium">Expenses</span>
-                      </a>
-                    </li>
                   </ul>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-users mr-2"></i>
-                    <span class="font-medium">Team</span>
-                  </a>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-comments mr-2"></i>
-                    <span class="font-medium">Messages</span>
-                    <span class="inline-flex align-items-center justify-content-center ml-auto bg-primary border-circle"
-                      style="min-width: 1.5rem; height: 1.5rem">3</span>
-                  </a>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-calendar mr-2"></i>
-                    <span class="font-medium">Calendar</span>
-                  </a>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-cog mr-2"></i>
-                    <span class="font-medium">Settings</span>
-                  </a>
                 </li>
               </ul>
             </li>
           </ul>
+
           <ul class="list-none p-3 m-0">
             <li>
               <div v-ripple v-styleclass="{
@@ -173,29 +210,20 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                 leaveToClass: 'hidden',
                 leaveActiveClass: 'slideup'
               }" class="p-3 flex align-items-center justify-content-between text-600 cursor-pointer p-ripple">
-                <span class="font-medium">APPLICATION</span>
+                <span class="font-medium">ACCOUNT</span>
                 <i class="pi pi-chevron-down"></i>
               </div>
               <ul class="list-none p-0 m-0 overflow-hidden">
                 <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-folder mr-2"></i>
-                    <span class="font-medium">Projects</span>
-                  </a>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                    <i class="pi pi-chart-bar mr-2"></i>
-                    <span class="font-medium">Performance</span>
-                  </a>
-                </li>
-                <li>
-                  <a v-ripple
-                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                  <a v-ripple class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
                     <i class="pi pi-cog mr-2"></i>
                     <span class="font-medium">Settings</span>
+                  </a>
+                </li>
+                <li>
+                  <a v-ripple class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                    <i class="pi pi-question-circle mr-2"></i>
+                    <span class="font-medium">Help</span>
                   </a>
                 </li>
               </ul>

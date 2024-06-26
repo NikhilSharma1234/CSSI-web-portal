@@ -3,26 +3,16 @@ import sideBar from './side-bar.vue';
 
 
 import { ref } from 'vue';
-import { useForm } from 'vee-validate'
 import { useRouter } from 'vue-router'
+import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 
-
-
-
-
-
 const router = useRouter()
-
-
-
 
 const loading = ref(false)
 const active = ref(0);
 const op = ref();
 const purpose = ref(['Personal', 'Academic', 'Professional']);
-
-
 
 
 const members = ref([
@@ -81,8 +71,6 @@ const validateStep2 = async (nextCallback: any) => {
     console.log('Validation failed:', errors.value);
   }
 };
-
-
 
 
 const createOrganization = async () => {
@@ -254,9 +242,6 @@ const routePage = async () => {
 <style scoped>
 
 
-.width{
-  width: 80%;
-}
 
 
 .container {
