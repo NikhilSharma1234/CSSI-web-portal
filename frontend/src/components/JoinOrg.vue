@@ -71,8 +71,8 @@ const requestOrganization = async () => {
  <div class="card width p-4 shadow-3 border-round" v-if="!showOrgAwait">
     <form @submit.prevent="onSubmit ">    
   <div class="text-center mb-5">
-  <h2 >Organization Required</h2>
-  <p class="text-500 line-height-2 ">You are currently not a part of an organization. To proceed, you can either join a pre-existing organization or <RouterLink to="createorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >create your own</a></RouterLink>.</p>
+  <h2 >Join Organization</h2>
+  <p class="text-500 line-height-2 ">Join a pre-existing organization or <RouterLink to="createorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >create your own</a></RouterLink>.</p>
   <Divider/>
       </div>
       <div class="text-center  mb-3 text-xl font-semibold">Request To Join Organization</div>             

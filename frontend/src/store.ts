@@ -72,145 +72,55 @@ const store = createStore({
   }
 })
 
-export const CustomerService = {
+
+
+export const OrganizationList = {
   getData() {
       return [
           {
-              id: 1007,
               name: 'James Butt',
-              country: {
-                  name: 'Algeria',
-                  code: 'dz'
-              },
-              company: 'Benton, John B Jr',
-              date: '2015-09-13',
-              status: 'unqualified',
-              verified: true,
-              activity: 17,
-              representative: {
-                  name: 'Ioni Bowcher',
-                  image: 'ionibowcher.png'
-              },
-              balance: 70663
+              representative: { name: 'Ioni Bowcher' },
+              role: { name: 'Member' }
           },
           {
-            id: 1001,
-            name: 'James Butt',
-            country: {
-                name: 'Algeria',
-                code: 'dz'
-            },
-            company: 'Benton, John B Jr',
-            date: '2015-09-13',
-            status: 'unqualified',
-            verified: true,
-            activity: 17,
-            representative: {
-                name: 'Ioni Bowcher',
-                image: 'ionibowcher.png'
-            },
-            balance: 70663
-        },
-        {
-            id: 1002,
-            name: 'James Butt',
-            country: {
-                name: 'Algeria',
-                code: 'dz'
-            },
-            company: 'Benton, John B Jr',
-            date: '2015-09-13',
-            status: 'unqualified',
-            verified: true,
-            activity: 17,
-            representative: {
-                name: 'Crystal Mint',
-                image: 'amyelsner.png'
-            },
-            balance: 70663
-        },
-        {
-            id: 1003,
-            name: 'James Butt',
-            country: {
-                name: 'Algeria',
-                code: 'dz'
-            },
-            company: 'Benton, John B Jr',
-            date: '2015-09-13',
-            status: 'unqualified',
-            verified: true,
-            activity: 17,
-            representative: {
-                name: 'The Name',
-                image: 'annafali.png'
-            },
-            balance: 70663
-        },
-        {
-            id: 1004,
-            name: 'Anna Jamie',
-            country: {
-                name: 'Algeria',
-                code: 'dz'
-            },
-            company: 'Benton, John B Jr',
-            date: '2015-09-13',
-            status: 'unqualified',
-            verified: true,
-            activity: 17,
-            representative: {
-                name: 'Kaden Nesch',
-                image: 'onyamalimba.png'
-            },
-            balance: 70663
-        },
-        {
-            id: 1005,
-            name: 'Michael Butt',
-            country: {
-                name: 'Algeria',
-                code: 'dz'
-            },
-            company: 'Benton, John B Jr',
-            date: '2015-09-13',
-            status: 'unqualified',
-            verified: true,
-            activity: 17,
-            representative: {
-                name: 'Michael Rapaport',
-                image: 'xuxuefeng.png'
-            },
-            balance: 70663
-        },
-        {
-            id: 1006,
-            name: 'Steward Butt',
-            country: {
-                name: 'Algeria',
-                code: 'dz'
-            },
-            company: 'Benton, John B Jr',
-            date: '2015-09-13',
-            status: 'unqualified',
-            verified: true,
-            activity: 17,
-            representative: {
-                name: 'Kaden Nesch',
-                image: 'onyamalimba.png'
-            },
-            balance: 70663
-        },
-
+              name: 'Sara Thomas',
+              representative: { name: 'Anna Figueroa' },
+              role: { name: 'Admin' }
+          },
+          {
+              name: 'David Cameron',
+              representative: { name: 'Crystal Mint' },
+              role: { name: 'Member' }
+          },
+          {
+              name: 'Laura May',
+              representative: { name: 'Ashley Carter' },
+              role: { name: 'Admin' }
+          },
+          {
+              name: 'Anna Jamie',
+              representative: { name: 'Kaden Nesch' },
+              role: { name: 'Member' }
+          },
+          {
+              name: 'Michael Lopez',
+              representative: { name: 'Michael Rapaport' },
+              role: { name: 'Admin' }
+          },
+          {
+              name: 'Steward Douglas',
+              representative: { name: 'Kaden Nesch' },
+              role: { name: 'Member' }
+          }
       ];
   },
 
   getCustomersSmall() {
       return Promise.resolve(this.getData().slice(0, 10));
-  },
-
-
+  }
 };
+
+
 
 
 // export the store

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import sideBar from './side-bar.vue';
 import { ref, onMounted } from 'vue';
-import { CustomerService } from '@/store';
+import { OrganizationList } from '@/store';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
 import { useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 
 const customers = ref();
-const selectedCustomer = ref();
+const users = ref();
+const selectedUser = ref();
 const visible = ref();
 const op = ref();
 const router = useRouter()
@@ -21,17 +22,24 @@ const filters = ref({
     status: { operator: FilterOperator.OR, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] }
 });
 const representatives = ref([
-    { name: 'Amy Elsner', image: 'amyelsner.png' },
-    { name: 'Anna Fali', image: 'annafali.png' },
-    { name: 'Asiya Javayant', image: 'asiyajavayant.png' },
-    { name: 'Bernardo Dominic', image: 'bernardodominic.png' },
-    { name: 'Elwin Sharvill', image: 'elwinsharvill.png' },
-    { name: 'Ioni Bowcher', image: 'ionibowcher.png' },
-    { name: 'Ivan Magalhaes', image: 'ivanmagalhaes.png' },
-    { name: 'Onyama Limba', image: 'onyamalimba.png' },
-    { name: 'Stephen Shaw', image: 'stephenshaw.png' },
-    { name: 'XuXue Feng', image: 'xuxuefeng.png' }
+    { name: 'Ioni Bowcher' },
+    { name: 'Amy Elsner' },
+    { name: 'Asiya Javayant' },
+    { name: 'Bernardo Dominic' },
+    { name: 'Elwin Sharvill' },
+    { name: 'Kaden Nesch' },
+    { name: 'Onyama Limba' },
+    { name: 'Stephen Shaw' },
+    { name: 'Ivan Magalhaes' },
+    { name: 'Ioni Bowcher' }
 ]);
+
+const roles = ref([
+    { name: 'Admin' },
+    { name: 'Member' },
+
+]);
+
 
 
 const member = ref(false);
@@ -45,7 +53,7 @@ const toggle = (event: any) => {
 }
 
 onMounted(() => {
-    CustomerService.getCustomersSmall().then((data) => (customers.value = data));
+    OrganizationList.getCustomersSmall().then((data) => (customers.value = data));
 });
 
 const toggleMember = () => {
@@ -150,13 +158,11 @@ const [description] = defineField('description')
             </template>
         </Dialog>
     </div>
-          <div class="card">
-            <Accordion :multiple="true" :activeIndex="0" expandIcon="pi pi-plus" collapseIcon="pi pi-minus">
-                <AccordionTab headerClass="text-xl" header="List of Applications and Owners">
-              <DataTable
+            <DataTable
                   v-model:filters="filters"
-                  v-model:selection="selectedCustomer"
+                  v-model:selection="selectedUser"
                   :value="customers"
+                  v-if="member"
                   stateStorage="session"
                   stateKey="dt-state-demo-session"
                   paginator
@@ -164,7 +170,8 @@ const [description] = defineField('description')
                   filterDisplay="menu"
                   selectionMode="single"
                   dataKey="id"
-                  :globalFilterFields="['name', 'country.name', 'representative.name', 'status']"
+                  :globalFilterFields="['name', 'representative.name',]"
+                  class="mt-5"
               >
                   <template #header>
                       <IconField class="-ml-3" iconPosition="left">
@@ -191,7 +198,6 @@ const [description] = defineField('description')
                   >
                       <template #body="{ data }">
                           <div class="flex align-items-center gap-2">
-                              <img :alt="data.representative.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${data.representative.image}`" style="width: 32px" />
                               <span>{{ data.representative.name }}</span>
                           </div>
                       </template>
@@ -199,7 +205,6 @@ const [description] = defineField('description')
                           <MultiSelect v-model="filterModel.value" :options="representatives" optionLabel="name" placeholder="Any" class="p-column-filter">
                               <template #option="slotProps">
                                   <div class="flex align-items-center gap-2">
-                                      <img :alt="slotProps.option.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${slotProps.option.image}`" style="width: 32px" />
                                       <span>{{ slotProps.option.name }}</span>
                                   </div>
                               </template>
@@ -209,11 +214,12 @@ const [description] = defineField('description')
 
                   <template #empty>No customers found.</template>
               </DataTable>
-            </AccordionTab>
-            <AccordionTab headerClass="text-xl red" header="List of Organization Members and their Roles">
-                <DataTable
+          <div class="card">
+            <Accordion :multiple="true" :activeIndex="0" expandIcon="pi pi-plus" collapseIcon="pi pi-minus">
+                <AccordionTab v-if="!member" headerClass="text-xl" header="List of Collaborated Applications">
+              <DataTable
                   v-model:filters="filters"
-                  v-model:selection="selectedCustomer"
+                  v-model:selection="selectedUser"
                   :value="customers"
                   stateStorage="session"
                   stateKey="dt-state-demo-session"
@@ -222,7 +228,7 @@ const [description] = defineField('description')
                   filterDisplay="menu"
                   selectionMode="single"
                   dataKey="id"
-                  :globalFilterFields="['name', 'country.name', 'representative.name', 'status']"
+                  :globalFilterFields="['name', 'representative.name']"
               >
                   <template #header>
                       <IconField class="-ml-3" iconPosition="left">
@@ -249,15 +255,68 @@ const [description] = defineField('description')
                   >
                       <template #body="{ data }">
                           <div class="flex align-items-center gap-2">
-                              <img :alt="data.representative.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${data.representative.image}`" style="width: 32px" />
                               <span>{{ data.representative.name }}</span>
                           </div>
                       </template>
                       <template #filter="{ filterModel }">
                           <MultiSelect v-model="filterModel.value" :options="representatives" optionLabel="name" placeholder="Any" class="p-column-filter">
                               <template #option="slotProps">
+                                  <div class="flex align-items-center gap-2">                                      <span>{{ slotProps.option.name }}</span>
+                                  </div>
+                              </template>
+                          </MultiSelect>
+                      </template>
+                  </Column>
+
+                  <template #empty>No customers found.</template>
+              </DataTable>
+            </AccordionTab>
+            <AccordionTab  v-if="!member" headerClass="text-xl red" header="List of Organization Members and their Roles">
+                <DataTable
+                  v-model:filters="filters"
+                  v-model:selection="selectedUser"
+                  :value="customers"
+                  stateStorage="session"
+                  stateKey="dt-state-demo-session"
+                  paginator
+                  :rows="5"
+                  filterDisplay="menu"
+                  selectionMode="single"
+                  dataKey="id"
+                  :globalFilterFields="['name', 'role.name']"
+              >
+                  <template #header>
+                      <IconField class="-ml-3" iconPosition="left">
+                          <InputIcon>
+                              <i class="pi pi-search" />
+                          </InputIcon>
+                          <InputText v-model="filters['global'].value" placeholder="Member Search" />
+                      </IconField>
+                  </template>
+                  <Column field="name" header="Member Name" sortable style="width: 25%">
+                      <template #filter="{ filterModel }">
+                          <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
+                      </template>
+                  </Column>
+                  <Column
+                      v-if="!member"
+                      header="Role"
+                      sortable
+                      sortField="role.name"
+                      filterField="role"
+                      :showFilterMatchModes="false"
+                      :filterMenuStyle="{ width: '14rem' }"
+                      style="width: 25%"
+                  >
+                      <template #body="{ data }">
+                          <div class="flex align-items-center gap-2">
+                              <span>{{ data.role.name }}</span>
+                          </div>
+                      </template>
+                      <template #filter="{ filterModel }">
+                          <MultiSelect v-model="filterModel.value" :options="roles" optionLabel="name" placeholder="Any" class="p-column-filter">
+                              <template #option="slotProps">
                                   <div class="flex align-items-center gap-2">
-                                      <img :alt="slotProps.option.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${slotProps.option.image}`" style="width: 32px" />
                                       <span>{{ slotProps.option.name }}</span>
                                   </div>
                               </template>
