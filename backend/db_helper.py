@@ -31,6 +31,6 @@ cur = conn.cursor()
 #              'titanhunter@gmail.com',
 #              'Memories@2024')
 #             )
-conn.commit()
+# conn.commit()
 cur.close()
 conn.close()

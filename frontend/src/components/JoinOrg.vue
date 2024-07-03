@@ -76,7 +76,7 @@ const requestOrganization = async () => {
   <Divider/>
       </div>
       <div class="text-center  mb-3 text-xl font-semibold">Request To Join Organization</div>             
-      <p class="text-500 mx-auto text-sm text-center  "style="max-width: 35rem;"> Must provide Organization ID and Email of Organization Leader. Message is an optional field that will be sent directly to Organization Leader.</p>
+      <p class="text-500 mx-auto text-sm text-center  " style="max-width: 35rem;"> Must provide Organization ID and Email of Organization Leader. Message is an optional field that will be sent directly to Organization Leader.</p>
       <div class="flex flex-column gap-1 mx-auto " style="min-height: 16rem; max-width: 20rem; ">
                  
                          <div class="field p-fluid mt-5">

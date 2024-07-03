@@ -70,7 +70,7 @@ const requestOrganization = async () => {
   <h2 > Join Request Pending</h2>
   <Divider/>
       </div>         
-      <p class="text-600 mx-auto pb-3 text-center  "style="max-width: 35rem;">You have sent out your request to join the organization *Enter ID Here*. Please wait patiently for the leader to respond to your request. If accepted, you will be taken to dashboard page.</p>
+      <p class="text-600 mx-auto pb-3 text-center  " style="max-width: 35rem;">You have sent out your request to join the organization *Enter ID Here*. Please wait patiently for the leader to respond to your request. If accepted, you will be taken to dashboard page.</p>
 
 
 

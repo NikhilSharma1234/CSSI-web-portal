@@ -7,32 +7,41 @@ import { useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 
-const customers = ref();
-const users = ref();
+const organization = ref();
 const selectedUser = ref();
 const visible = ref();
 const op = ref();
 const router = useRouter()
 
+
+const filters3 = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+});
+
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-    'country.name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-    representative: { value: null, matchMode: FilterMatchMode.IN },
-    status: { operator: FilterOperator.OR, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] }
+    owner: { value: null, matchMode: FilterMatchMode.IN },
 });
-const representatives = ref([
+
+const filters2 = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    owner: { value: null, matchMode: FilterMatchMode.IN },
+    role: { value: null, matchMode: FilterMatchMode.IN},
+});
+
+
+
+const owners = ref([
     { name: 'Ioni Bowcher' },
-    { name: 'Amy Elsner' },
-    { name: 'Asiya Javayant' },
-    { name: 'Bernardo Dominic' },
-    { name: 'Elwin Sharvill' },
+    { name: 'Anna Figueroa' },
+    { name: 'Crystal Mint' },
+    { name: 'Ashley Carter' },
     { name: 'Kaden Nesch' },
-    { name: 'Onyama Limba' },
-    { name: 'Stephen Shaw' },
-    { name: 'Ivan Magalhaes' },
-    { name: 'Ioni Bowcher' }
+    { name: 'Michael Rapaport' }
 ]);
+
 
 const roles = ref([
     { name: 'Admin' },
@@ -53,7 +62,7 @@ const toggle = (event: any) => {
 }
 
 onMounted(() => {
-    OrganizationList.getCustomersSmall().then((data) => (customers.value = data));
+    OrganizationList.getOrganizationSmall().then((data) => (organization.value = data));
 });
 
 const toggleMember = () => {
@@ -90,7 +99,7 @@ const [description] = defineField('description')
           </div>
           <div class="text-center text-500 text-sm mx-8 ">
               {{ member
-                  ? 'This is the member dashboard. You will be able to see all of your personal applications here.'
+                  ? 'This is the member dashboard. You will be able to see all of the collaborated applications here.'
                   : 'This is the organization leader dashboard. You will be able to see all applications created in this organization and their respective owners.' }}
           </div>
           <div v-if="!member" class="flex mt-5 justify-content-center">
@@ -159,18 +168,15 @@ const [description] = defineField('description')
         </Dialog>
     </div>
             <DataTable
-                  v-model:filters="filters"
-                  v-model:selection="selectedUser"
-                  :value="customers"
+                  v-model:filters="filters3"
+                  :value="organization"
                   v-if="member"
-                  stateStorage="session"
-                  stateKey="dt-state-demo-session"
                   paginator
                   :rows="5"
                   filterDisplay="menu"
                   selectionMode="single"
-                  dataKey="id"
-                  :globalFilterFields="['name', 'representative.name',]"
+                  dataKey="application"
+                  :globalFilterFields="['name']"
                   class="mt-5"
               >
                   <template #header>
@@ -178,10 +184,10 @@ const [description] = defineField('description')
                           <InputIcon>
                               <i class="pi pi-search" />
                           </InputIcon>
-                          <InputText v-model="filters['global'].value" placeholder="Application Search" />
+                          <InputText v-model="filters3['global'].value" placeholder="Application Search" />
                       </IconField>
                   </template>
-                  <Column field="name" header="Application Name" sortable style="width: 25%">
+                  <Column field="name" header=" Name" sortable style="width: 25%">
                       <template #filter="{ filterModel }">
                           <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
                       </template>
@@ -190,19 +196,19 @@ const [description] = defineField('description')
                       v-if="!member"
                       header="Owner"
                       sortable
-                      sortField="representative.name"
-                      filterField="representative"
+                      sortField="owner.name"
+                      filterField="owner"
                       :showFilterMatchModes="false"
                       :filterMenuStyle="{ width: '14rem' }"
                       style="width: 25%"
                   >
                       <template #body="{ data }">
                           <div class="flex align-items-center gap-2">
-                              <span>{{ data.representative.name }}</span>
+                              <span>{{ data.owner.name }}</span>
                           </div>
                       </template>
                       <template #filter="{ filterModel }">
-                          <MultiSelect v-model="filterModel.value" :options="representatives" optionLabel="name" placeholder="Any" class="p-column-filter">
+                          <MultiSelect v-model="filterModel.value" :options="owners" optionLabel="name" placeholder="Any" class="p-column-filter">
                               <template #option="slotProps">
                                   <div class="flex align-items-center gap-2">
                                       <span>{{ slotProps.option.name }}</span>
@@ -212,23 +218,20 @@ const [description] = defineField('description')
                       </template>
                   </Column>
 
-                  <template #empty>No customers found.</template>
+                  <template #empty>No applications found </template>
               </DataTable>
           <div class="card">
             <Accordion :multiple="true" :activeIndex="0" expandIcon="pi pi-plus" collapseIcon="pi pi-minus">
                 <AccordionTab v-if="!member" headerClass="text-xl" header="List of Collaborated Applications">
               <DataTable
                   v-model:filters="filters"
-                  v-model:selection="selectedUser"
-                  :value="customers"
-                  stateStorage="session"
-                  stateKey="dt-state-demo-session"
+                  :value="organization"
                   paginator
                   :rows="5"
                   filterDisplay="menu"
                   selectionMode="single"
-                  dataKey="id"
-                  :globalFilterFields="['name', 'representative.name']"
+                  dataKey="member"
+                  :globalFilterFields="['name', 'owner.name']"
               >
                   <template #header>
                       <IconField class="-ml-3" iconPosition="left">
@@ -247,19 +250,19 @@ const [description] = defineField('description')
                       v-if="!member"
                       header="Owner"
                       sortable
-                      sortField="representative.name"
-                      filterField="representative"
+                      sortField="owner.name"
+                      filterField="owner"
                       :showFilterMatchModes="false"
                       :filterMenuStyle="{ width: '14rem' }"
                       style="width: 25%"
                   >
                       <template #body="{ data }">
                           <div class="flex align-items-center gap-2">
-                              <span>{{ data.representative.name }}</span>
+                              <span>{{ data.owner.name }}</span>
                           </div>
                       </template>
                       <template #filter="{ filterModel }">
-                          <MultiSelect v-model="filterModel.value" :options="representatives" optionLabel="name" placeholder="Any" class="p-column-filter">
+                          <MultiSelect v-model="filterModel.value" :options="owners" optionLabel="name" placeholder="Any" class="p-column-filter">
                               <template #option="slotProps">
                                   <div class="flex align-items-center gap-2">                                      <span>{{ slotProps.option.name }}</span>
                                   </div>
@@ -268,32 +271,30 @@ const [description] = defineField('description')
                       </template>
                   </Column>
 
-                  <template #empty>No customers found.</template>
+                  <template #empty>No applications found</template>
               </DataTable>
             </AccordionTab>
             <AccordionTab  v-if="!member" headerClass="text-xl red" header="List of Organization Members and their Roles">
                 <DataTable
-                  v-model:filters="filters"
+                  v-model:filters="filters2"
                   v-model:selection="selectedUser"
-                  :value="customers"
-                  stateStorage="session"
-                  stateKey="dt-state-demo-session"
+                  :value="organization"
                   paginator
                   :rows="5"
                   filterDisplay="menu"
                   selectionMode="single"
-                  dataKey="id"
-                  :globalFilterFields="['name', 'role.name']"
+                  dataKey="member"
+                  :globalFilterFields="['owner.name', 'role.name']"
               >
                   <template #header>
                       <IconField class="-ml-3" iconPosition="left">
                           <InputIcon>
                               <i class="pi pi-search" />
                           </InputIcon>
-                          <InputText v-model="filters['global'].value" placeholder="Member Search" />
+                          <InputText v-model="filters2['global'].value" placeholder="Member Search" />
                       </IconField>
                   </template>
-                  <Column field="name" header="Member Name" sortable style="width: 25%">
+                  <Column field="owner.name" header="Member Name" sortable style="width: 25%">
                       <template #filter="{ filterModel }">
                           <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
                       </template>
@@ -316,15 +317,14 @@ const [description] = defineField('description')
                       <template #filter="{ filterModel }">
                           <MultiSelect v-model="filterModel.value" :options="roles" optionLabel="name" placeholder="Any" class="p-column-filter">
                               <template #option="slotProps">
-                                  <div class="flex align-items-center gap-2">
-                                      <span>{{ slotProps.option.name }}</span>
+                                  <div class="flex align-items-center gap-2">                                      <span>{{ slotProps.option.name }}</span>
                                   </div>
                               </template>
                           </MultiSelect>
                       </template>
                   </Column>
 
-                  <template #empty>No customers found.</template>
+                  <template #empty>No members found</template>
               </DataTable>
             </AccordionTab>
             </Accordion>

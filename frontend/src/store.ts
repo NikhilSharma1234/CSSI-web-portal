@@ -79,48 +79,64 @@ export const OrganizationList = {
       return [
           {
               name: 'James Butt',
-              representative: { name: 'Ioni Bowcher' },
+              owner: { name: 'Ioni Bowcher' },
               role: { name: 'Member' }
           },
           {
               name: 'Sara Thomas',
-              representative: { name: 'Anna Figueroa' },
+              owner: { name: 'Anna Figueroa' },
               role: { name: 'Admin' }
           },
           {
               name: 'David Cameron',
-              representative: { name: 'Crystal Mint' },
+              owner: { name: 'Crystal Mint' },
               role: { name: 'Member' }
           },
           {
               name: 'Laura May',
-              representative: { name: 'Ashley Carter' },
+              owner: { name: 'Ashley Carter' },
               role: { name: 'Admin' }
           },
           {
               name: 'Anna Jamie',
-              representative: { name: 'Kaden Nesch' },
+              owner: { name: 'Kaden Nesch' },
               role: { name: 'Member' }
           },
           {
               name: 'Michael Lopez',
-              representative: { name: 'Michael Rapaport' },
+              owner: { name: 'Michael Rapaport' },
               role: { name: 'Admin' }
           },
           {
               name: 'Steward Douglas',
-              representative: { name: 'Kaden Nesch' },
+              owner: { name: 'Kaden Nesch' },
               role: { name: 'Member' }
           }
       ];
   },
 
-  getCustomersSmall() {
+  getOrganizationSmall() {
       return Promise.resolve(this.getData().slice(0, 10));
   }
 };
 
 
+export const SensorList = {
+  getData() {
+      return [
+          { name: 'Sensor1', owner: { name: 'Kaden Nesch' } },
+          { name: 'Sensor2', owner: { name: 'Michael George' } },
+          { name: 'Sensor3', owner: { name: 'George Nesch' } },
+          { name: 'Sensor4', owner: { name: 'Michael Nesch' } },
+          { name: 'Sensor5', owner: { name: 'Kaden Nesch' } },
+          { name: 'Sensor6', owner: { name: 'Michael George' } },
+      ];
+  },
+
+  getSensorSmall() {
+      return Promise.resolve(this.getData().slice(0, 10));
+  }
+};
 
 
 // export the store
