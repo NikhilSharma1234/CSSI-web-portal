@@ -43,7 +43,7 @@ onMounted(() => {
       <div class="text-center text-500 text-sm ml-8 mr-8">
         Register new sensor using QR or defualt setup.
       </div>
-      <div class="text-center mt-3">
+      <div class="text-center mt-4">
       <Button outlined>Use QR Code </Button>
       <div class="text-600 font-medium mb-3 mt-3">Or</div>
       
