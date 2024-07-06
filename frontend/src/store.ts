@@ -72,5 +72,72 @@ const store = createStore({
   }
 })
 
+
+
+export const OrganizationList = {
+  getData() {
+      return [
+          {
+              name: 'James Butt',
+              owner: { name: 'Ioni Bowcher' },
+              role: { name: 'Member' }
+          },
+          {
+              name: 'Sara Thomas',
+              owner: { name: 'Anna Figueroa' },
+              role: { name: 'Admin' }
+          },
+          {
+              name: 'David Cameron',
+              owner: { name: 'Crystal Mint' },
+              role: { name: 'Member' }
+          },
+          {
+              name: 'Laura May',
+              owner: { name: 'Ashley Carter' },
+              role: { name: 'Admin' }
+          },
+          {
+              name: 'Anna Jamie',
+              owner: { name: 'Kaden Nesch' },
+              role: { name: 'Member' }
+          },
+          {
+              name: 'Michael Lopez',
+              owner: { name: 'Michael Rapaport' },
+              role: { name: 'Admin' }
+          },
+          {
+              name: 'Steward Douglas',
+              owner: { name: 'Kaden Nesch' },
+              role: { name: 'Member' }
+          }
+      ];
+  },
+
+  getOrganizationSmall() {
+      return Promise.resolve(this.getData().slice(0, 10));
+  }
+};
+
+
+export const SensorList = {
+  getData() {
+      return [
+          { name: 'Sensor1', owner: { name: 'Kaden Nesch' } },
+          { name: 'Sensor2', owner: { name: 'Michael George' } },
+          { name: 'Sensor3', owner: { name: 'George Nesch' } },
+          { name: 'Sensor4', owner: { name: 'Michael Nesch' } },
+          { name: 'Sensor5', owner: { name: 'Kaden Nesch' } },
+          { name: 'Sensor6', owner: { name: 'Michael George' } },
+      ];
+  },
+
+  getSensorSmall() {
+      return Promise.resolve(this.getData().slice(0, 10));
+  }
+};
+
+
 // export the store
 export default store

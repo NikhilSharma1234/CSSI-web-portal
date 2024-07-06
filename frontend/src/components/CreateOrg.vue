@@ -3,26 +3,16 @@ import sideBar from './side-bar.vue';
 
 
 import { ref } from 'vue';
-import { useForm } from 'vee-validate'
 import { useRouter } from 'vue-router'
+import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 
-
-
-
-
-
 const router = useRouter()
-
-
-
 
 const loading = ref(false)
 const active = ref(0);
 const op = ref();
 const purpose = ref(['Personal', 'Academic', 'Professional']);
-
-
 
 
 const members = ref([
@@ -83,8 +73,6 @@ const validateStep2 = async (nextCallback: any) => {
 };
 
 
-
-
 const createOrganization = async () => {
     console.log('Form submitted with:', {
         id: orgID.value,
@@ -111,8 +99,8 @@ const routePage = async () => {
 
  <div class="card width p-4 shadow-3 border-round">
   <div class="text-center mb-6">
-  <h2 >Organization Required</h2>
-  <p label="dan" class="text-500 line-height-2">You are currently not a part of an organization. To proceed, you can either create your own organization or <RouterLink to="joinorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >join a pre-existing one</a></RouterLink>.</p>
+  <h2 >Create Organization</h2>
+  <p label="dan" class="text-500 line-height-2">Create your own organization or <RouterLink to="joinorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >join a pre-existing one</a></RouterLink>.</p>
   <Divider/>
       </div>
 
@@ -130,7 +118,7 @@ const routePage = async () => {
                 <template #content="{ nextCallback }">
                     <form @submit.prevent="validateStep1(nextCallback)">
                     <div class="flex flex-column gap-2 mx-auto" style="min-height: 16rem; max-width: 20rem">
-                        <div class="text-center mt-3 mb-3 text-xl font-semibold">Create your organization</div>
+                        <div class="text-center mt-3 mb-3 text-xl font-semibold">Enter Organization Details</div>
                         <div class="field p-fluid mt-3">
                             <label class="text-900 font-medium mb-2">
                             Organization ID <span class="required-asterisk">*</span>
@@ -254,18 +242,17 @@ const routePage = async () => {
 <style scoped>
 
 
-.width{
-  width: 80%;
-}
 
 
 .container {
   display: flex;
   justify-content: center; /* Centers the child div horizontally */
   align-items: center; /* Centers the child div vertically */
-  height: 100vh; /* Makes the container take the full viewport height */
 }
 
+.width{
+    width: 80%;
+}
 
 .p-stepper {
     flex-basis: 50rem;

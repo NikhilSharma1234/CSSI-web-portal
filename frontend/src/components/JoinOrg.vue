@@ -71,12 +71,12 @@ const requestOrganization = async () => {
  <div class="card width p-4 shadow-3 border-round" v-if="!showOrgAwait">
     <form @submit.prevent="onSubmit ">    
   <div class="text-center mb-5">
-  <h2 >Organization Required</h2>
-  <p class="text-500 line-height-2 ">You are currently not a part of an organization. To proceed, you can either join a pre-existing organization or <RouterLink to="createorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >create your own</a></RouterLink>.</p>
+  <h2 >Join Organization</h2>
+  <p class="text-500 line-height-2 ">Join a pre-existing organization or <RouterLink to="createorg" class="no-underline " ><a class="font-semibold no-underline text-blue-400 cursor-pointer" >create your own</a></RouterLink>.</p>
   <Divider/>
       </div>
       <div class="text-center  mb-3 text-xl font-semibold">Request To Join Organization</div>             
-      <p class="text-500 mx-auto text-sm text-center  "style="max-width: 35rem;"> Must provide Organization ID and Email of Organization Leader. Message is an optional field that will be sent directly to Organization Leader.</p>
+      <p class="text-500 mx-auto text-sm text-center  " style="max-width: 35rem;"> Must provide Organization ID and Email of Organization Leader. Message is an optional field that will be sent directly to Organization Leader.</p>
       <div class="flex flex-column gap-1 mx-auto " style="min-height: 16rem; max-width: 20rem; ">
                  
                          <div class="field p-fluid mt-5">
@@ -128,7 +128,6 @@ const requestOrganization = async () => {
   display: flex;
   justify-content: center; /* Centers the child div horizontally */
   align-items: center; /* Centers the child div vertically */
-  height: 100vh; /* Makes the container take the full viewport height */
 }
 
 
