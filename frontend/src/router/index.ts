@@ -8,6 +8,7 @@ import JoinOrgView from '@/views/JoinOrgView.vue'
 import OrgDashView from '@/views/OrgDashView.vue'
 import SensorView from '@/views/SensorView.vue'
 import AddSensorView from '@/views/AddSensorView.vue'
+import CreateAppView from '@/views/CreateAppView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/createorg',
       name: 'CreateOrg',
       component: CreateOrgView
+    },
+    {
+      path: '/createApp',
+      name: 'Create Application',
+      component: CreateAppView
     },
     {
       path: '/login',
