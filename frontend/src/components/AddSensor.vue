@@ -9,9 +9,14 @@ const schema = yup.object({
     selectedModel: yup.string().required('Sensor Model is required').label('Sensor Model'),
     selectedHardware: yup.string().required('Hardware Version is required').label('Hardware Version'),
     selectedFirmware: yup.string().required('Firmware Version is required').label('Firmware Version'),
+    additionalField1: yup.string().required('This field is required').label('Additional Field 1'),
+    additionalField2: yup.string().required('This field is required').label('Additional Field 2'),
+    additionalField3: yup.string().required('This field is required').label('Additional Field 3'),
+    additionalField4: yup.string().required('This field is required').label('Additional Field 4'),
+    additionalField5: yup.string().required('This field is required').label('Additional Field 5'),
 });
 
-const { errors, validate, defineField } = useForm({
+const { errors, validate, defineField, setFieldValue } = useForm({
     validationSchema: schema
 });
 
@@ -19,6 +24,11 @@ const [selectedBrand] = defineField('selectedBrand')
 const [selectedModel] = defineField('selectedModel')
 const [selectedHardware] = defineField('selectedHardware')
 const [selectedFirmware] = defineField('selectedFirmware')
+const [selectedFrequency] = defineField('selectedFrequency')
+const [joinEUI] = defineField('joinEUI')
+const [additionalField3] = defineField('additionalField3')
+const [additionalField4] = defineField('additionalField4')
+const [additionalField5] = defineField('additionalField5')
 
 const createOrganization = async () => {
     console.log('Form submitted with:', {
@@ -26,6 +36,11 @@ const createOrganization = async () => {
         selectedModel: selectedModel.value,
         selectedHardware: selectedHardware.value,
         selectedFirmware: selectedFirmware.value,
+        selectedFrequency: selectedFrequency.value,
+        joinEUI: joinEUI.value,
+        additionalField3: additionalField3.value,
+        additionalField4: additionalField4.value,
+        additionalField5: additionalField5.value,
     });
 }
 
@@ -33,11 +48,13 @@ const brand = ref(['Dragino Technology', 'Xignal', 'Cital']);
 const model = ref(['Temperature', 'Humidity', 'Temperature & Humidity']);
 const hardware = ref(['1.0.0']);
 const firmware = ref(['p1.0.0', 'q1.0.1', 'r1.0.2']);
+const frequency = ref(['FSB1', 'FSB2', 'FSB3', 'FSB4', 'FSB5'])
 
 const showModelDropdown = ref(false);
 const showHardwareDropdown = ref(false);
 const showFirmwareDropdown = ref(false);
-
+const showAdditionalField1 = ref(false);
+const showAdditionalFields = ref(false);
 
 watch(selectedBrand, (newVal) => {
     if (newVal) {
@@ -65,11 +82,34 @@ watch(selectedHardware, (newVal) => {
         }
     }
 });
+
+watch(selectedFirmware, (newVal) => {
+    if (newVal) {
+        showAdditionalField1.value = true;
+    }
+});
+
+watch(selectedFrequency, (newVal) => {
+    if (newVal) {
+        showAdditionalFields.value = true;
+    }
+});
+
+
+const handleInput = (event: InputEvent) => {
+  const input = event.target as HTMLInputElement;
+  let value = input.value.toUpperCase(); // Convert input to uppercase
+
+  // Filter out non A-F and 0-9 characters
+  value = value.replace(/[^A-F0-9\s]/g, '');
+
+  setFieldValue('joinEUI', value); // Update the v-model value
+};
 </script>
 
 <template>
-      <sideBar></sideBar>
-      <RouterView />
+  <sideBar></sideBar>
+  <RouterView />
   <div class="container">
     <div class="card w-min shadow-2">
       <div class="text-center">
@@ -95,7 +135,7 @@ watch(selectedHardware, (newVal) => {
           <Divider class="mt-4"/>
 
           <div class="grid">
-            <div class="col-12 md:col-6" v-if="true">
+            <div class="col-12 md:col-6">
               <div class="flex flex-column align-items-center mt-4">
                 <label class="text-600 font-medium mb-2 mr-7">
                   Sensor Brand<span class="required-asterisk"> *</span>
@@ -134,29 +174,75 @@ watch(selectedHardware, (newVal) => {
               </div>
             </div>
           </div>
+
+          <div v-if="showAdditionalField1" class="grid">
+            <div class="col-12">
+              <div class="flex flex-column mt-4">
+                <label class="text-600 font-medium mb-2 ml-2">
+                  Frequency Plan<span class="required-asterisk"> *</span>
+                </label>
+                <Dropdown v-model="selectedFrequency" class="w-full " :options="frequency" placeholder="Select Option"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error"></small>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="showAdditionalFields" class="grid">
+            <div class="col-12">
+              <div class="flex flex-column  mt-4">
+                <label class="text-600 font-medium mb-2 ml-2">
+                  Join-EUI<span class="required-asterisk"> *</span>
+                </label>
+                <InputMask @input="handleInput" id="basic" v-model="joinEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" />
+                <small id="selectedPurpose-help" class="p-error"></small>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="flex flex-column mt-4">
+                <label class="text-600 font-medium mb-2 ml-2">
+                  Dev-EUI<span class="required-asterisk"> *</span>
+                </label>
+                <Dropdown v-model="additionalField3" class="w-full" :options="firmware" placeholder="Select Option"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error"></small>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="flex flex-column mt-4">
+                <label class="text-600 font-medium mb-2 ml-2">
+                  App-Key<span class="required-asterisk"> *</span>
+                </label>
+                <Dropdown v-model="additionalField4" class="w-full" :options="firmware" placeholder="Select Option"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error"></small>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="flex flex-column mt-4">
+                <label class="text-600 font-medium mb-2 ml-2">
+                 End-Device ID<span class="required-asterisk"> *</span>
+                </label>
+                <Dropdown v-model="additionalField5" class="w-full" :options="firmware" placeholder="Select Option"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error"></small>
+              </div>
+            </div>
+          </div>
         </TabPanel>
       </TabView>
     </div>
   </div>
 </template>
 
- 
-
- 
 <style scoped>
-
-
-
 .container {
   display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 80vh;
+  justify-content: center;
+
 }
 
 .required-asterisk {
-    color: rgb(253, 87, 87);
-    /* Makes the asterisk red */
+  color: rgb(253, 87, 87);
+  /* Makes the asterisk red */
 }
-
 </style>
