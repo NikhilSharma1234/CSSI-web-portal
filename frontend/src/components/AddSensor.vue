@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import sideBar from './side-bar.vue';
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
+import vCapitalize from '../assets/functions/capitalize'
+import vRestrict from '../assets/functions/restrict'
 
 const schema = yup.object({
     selectedBrand: yup.string().required('Sensor Brand is required').label('Sensor Brand'),
     selectedModel: yup.string().required('Sensor Model is required').label('Sensor Model'),
     selectedHardware: yup.string().required('Hardware Version is required').label('Hardware Version'),
     selectedFirmware: yup.string().required('Firmware Version is required').label('Firmware Version'),
-    additionalField1: yup.string().required('This field is required').label('Additional Field 1'),
-    additionalField2: yup.string().required('This field is required').label('Additional Field 2'),
-    additionalField3: yup.string().required('This field is required').label('Additional Field 3'),
-    additionalField4: yup.string().required('This field is required').label('Additional Field 4'),
-    additionalField5: yup.string().required('This field is required').label('Additional Field 5'),
+    selectedFrequency: yup.string().required('This field is required').label('Frequency'),
+    joinEUI: yup.string().required('JoinEUI is required').label('JoinEUI'),
+    devEUI: yup.string().required('This field is required').label('Additional Field 3'),
+    appKey: yup.string().required('This field is required').label('Additional Field 4'),
+    deviceID: yup.string().required('This field is required').label('Additional Field 5'),
 });
 
-const { errors, validate, defineField, setFieldValue } = useForm({
+const { errors, validate, defineField } = useForm({
     validationSchema: schema
 });
 
@@ -25,24 +27,10 @@ const [selectedModel] = defineField('selectedModel')
 const [selectedHardware] = defineField('selectedHardware')
 const [selectedFirmware] = defineField('selectedFirmware')
 const [selectedFrequency] = defineField('selectedFrequency')
-const [joinEUI] = defineField('joinEUI')
-const [additionalField3] = defineField('additionalField3')
-const [additionalField4] = defineField('additionalField4')
-const [additionalField5] = defineField('additionalField5')
-
-const createOrganization = async () => {
-    console.log('Form submitted with:', {
-        selectedBrand: selectedBrand.value,
-        selectedModel: selectedModel.value,
-        selectedHardware: selectedHardware.value,
-        selectedFirmware: selectedFirmware.value,
-        selectedFrequency: selectedFrequency.value,
-        joinEUI: joinEUI.value,
-        additionalField3: additionalField3.value,
-        additionalField4: additionalField4.value,
-        additionalField5: additionalField5.value,
-    });
-}
+const joinEUI = ref('')
+const devEUI = ref('')
+const appKey = ref('')
+const [deviceID] = defineField('deviceID')
 
 const brand = ref(['Dragino Technology', 'Xignal', 'Cital']);
 const model = ref(['Temperature', 'Humidity', 'Temperature & Humidity']);
@@ -55,6 +43,7 @@ const showHardwareDropdown = ref(false);
 const showFirmwareDropdown = ref(false);
 const showAdditionalField1 = ref(false);
 const showAdditionalFields = ref(false);
+const loading = ref(false)
 
 watch(selectedBrand, (newVal) => {
     if (newVal) {
@@ -96,28 +85,48 @@ watch(selectedFrequency, (newVal) => {
 });
 
 
-const handleInput = (event: InputEvent) => {
-  const input = event.target as HTMLInputElement;
-  let value = input.value.toUpperCase(); // Convert input to uppercase
 
-  // Filter out non A-F and 0-9 characters
-  value = value.replace(/[^A-F0-9\s]/g, '');
+const createOrganization = async () => {
+    console.log('Form submitted with:', {
+        selectedBrand: selectedBrand.value,
+        selectedModel: selectedModel.value,
+        selectedHardware: selectedHardware.value,
+        selectedFirmware: selectedFirmware.value,
+        selectedFrequency: selectedFrequency.value,
+        joinEUI: joinEUI.value,
+        devEUI: devEUI.value,
+        appKey: appKey.value,
+        deviceID: deviceID.value,
+    });
+}
 
-  setFieldValue('joinEUI', value); // Update the v-model value
+const validateForm = async () => {
+    await validate();
+    if (Object.keys(errors.value).length) {
+        return console.log('Validation failed:', errors.value);
+    }
+    loading.value = true;
+    setTimeout(() => {
+        loading.value = false;
+        createOrganization();
+    }, 2000);
 };
+
+const test = ref('')
+
 </script>
 
 <template>
   <sideBar></sideBar>
   <RouterView />
   <div class="container">
-    <div class="card w-min shadow-2">
+    <div class="card width shadow-2">
       <div class="text-center">
         <h2>Register New Sensor</h2>
         <h5 class="-mt-3">To Application-ID</h5>
       </div>
       <TabView>
-        <TabPanel header="QR Code Registration">
+        <TabPanel header="QR Scanning Registration">
           <div class="p-3">
             <div class="text-center text-600 text-sm">
               Register new device using the QR code on the back of your sensor
@@ -128,20 +137,20 @@ const handleInput = (event: InputEvent) => {
             </div>
           </div>
         </TabPanel>
-        <TabPanel header="Default Setup Registration">
+        <TabPanel header="Manual Registration (Default) ">
           <div class="text-center text-600 text-sm mt-3">
             Register new device using the default setup provided by LoRaWan repository
           </div>
           <Divider class="mt-4"/>
-
+          <form @submit.prevent="validateForm()">
           <div class="grid">
             <div class="col-12 md:col-6">
               <div class="flex flex-column align-items-center mt-4">
                 <label class="text-600 font-medium mb-2 mr-7">
                   Sensor Brand<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="selectedBrand" class="w-full md:w-12rem" :options="brand" placeholder="Select Brand"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <Dropdown v-model="selectedBrand" class="w-full md:w-12rem" :options="brand" placeholder="Select Brand" :class="{ 'p-invalid': errors.selectedBrand }"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.selectedBrand }}</small>
               </div>
             </div>
 
@@ -150,8 +159,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 mr-7">
                   Sensor Model<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="selectedModel" class="w-full md:w-12rem" :options="model" placeholder="Select Model"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <Dropdown v-model="selectedModel" class="w-full md:w-12rem" :options="model" placeholder="Select Model" :class="{ 'p-invalid': errors.selectedModel }"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.selectedModel }}</small>
               </div>
             </div>
 
@@ -160,8 +169,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 mr-5">
                   Hardware Version<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="selectedHardware" class="w-full md:w-12rem" :options="hardware" placeholder="Select Version"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <Dropdown v-model="selectedHardware" class="w-full md:w-12rem" :options="hardware" placeholder="Select Version" :class="{ 'p-invalid': errors.selectedHardware }"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.selectedHardware }}</small>
               </div>
             </div>
             <div class="col-12 md:col-6" v-if="showFirmwareDropdown">
@@ -169,8 +178,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 mr-5">
                   Firmware Version<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="selectedFirmware" class="w-full md:w-12rem" :options="firmware" placeholder="Select Version"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <Dropdown v-model="selectedFirmware" class="w-full md:w-12rem" :options="firmware" placeholder="Select Version" :class="{ 'p-invalid': errors.selectedFirmware }"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.selectedFirmware }}</small>
               </div>
             </div>
           </div>
@@ -181,8 +190,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 ml-2">
                   Frequency Plan<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="selectedFrequency" class="w-full " :options="frequency" placeholder="Select Option"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <Dropdown v-model="selectedFrequency" class="w-full " :options="frequency" placeholder="Select Option" :class="{ 'p-invalid': errors.selectedFrequency }"></Dropdown>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.selectedFrequency }}</small>
               </div>
             </div>
           </div>
@@ -193,8 +202,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 ml-2">
                   Join-EUI<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask @input="handleInput" id="basic" v-model="joinEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" />
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <InputMask v-restrict v-capitalize  v-model="joinEUI" mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.joinEUI }"/>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.joinEUI }}</small>
               </div>
             </div>
 
@@ -203,8 +212,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 ml-2">
                   Dev-EUI<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="additionalField3" class="w-full" :options="firmware" placeholder="Select Option"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <InputMask v-restrict v-capitalize v-model="devEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.devEUI }"/>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.devEUI }}</small>
               </div>
             </div>
 
@@ -213,8 +222,8 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 ml-2">
                   App-Key<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="additionalField4" class="w-full" :options="firmware" placeholder="Select Option"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <InputMask v-restrict v-capitalize v-model="appKey"  mask="** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• •• •• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.appKey }"/>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.appKey }}</small>
               </div>
             </div>
 
@@ -223,11 +232,15 @@ const handleInput = (event: InputEvent) => {
                 <label class="text-600 font-medium mb-2 ml-2">
                  End-Device ID<span class="required-asterisk"> *</span>
                 </label>
-                <Dropdown v-model="additionalField5" class="w-full" :options="firmware" placeholder="Select Option"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error"></small>
+                <InputMask id="basic" v-model="deviceID"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.deviceID }"/>
+                <small id="selectedPurpose-help" class="p-error">{{ errors.deviceID }}</small>
               </div>
             </div>
+            <div class="flex pt-4 justify-content-end">
+                <Button label="Add Sensor" :loading="loading" icon="pi pi-arrow-right" type="submit" iconPos="right" />
+            </div>
           </div>
+        </form>
         </TabPanel>
       </TabView>
     </div>
@@ -239,6 +252,10 @@ const handleInput = (event: InputEvent) => {
   display: flex;
   justify-content: center;
 
+}
+
+.width{
+  width: 550px;
 }
 
 .required-asterisk {
