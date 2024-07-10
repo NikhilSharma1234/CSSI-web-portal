@@ -4,7 +4,6 @@ import { ref, watch } from 'vue';
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 import vRestrict from '../assets/functions/restrict'
-import _ from 'lodash'
 
 const schema = yup.object({
     selectedBrand: yup.string().required('Sensor Brand is required').label('Sensor Brand'),
@@ -34,16 +33,6 @@ const [deviceID] = defineField('deviceID')
 
 
 
-const debouncedUpdateDeviceID = _.debounce((newVal: string) => {
-  if (!deviceID.value) {
-    deviceID.value = newVal;
-  }
-}, 200);
-
-// Watcher to update deviceID based on joinEUI
-watch(joinEUI, (newVal) => {
-  debouncedUpdateDeviceID(newVal);
-});
 
 
 
