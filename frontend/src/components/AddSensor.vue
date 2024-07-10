@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import sideBar from './side-bar.vue';
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
-import vCapitalize from '../assets/functions/capitalize'
 import vRestrict from '../assets/functions/restrict'
+import _ from 'lodash'
 
 const schema = yup.object({
     selectedBrand: yup.string().required('Sensor Brand is required').label('Sensor Brand'),
@@ -13,12 +13,12 @@ const schema = yup.object({
     selectedFirmware: yup.string().required('Firmware Version is required').label('Firmware Version'),
     selectedFrequency: yup.string().required('This field is required').label('Frequency'),
     joinEUI: yup.string().required('JoinEUI is required').label('JoinEUI'),
-    devEUI: yup.string().required('This field is required').label('Additional Field 3'),
-    appKey: yup.string().required('This field is required').label('Additional Field 4'),
-    deviceID: yup.string().required('This field is required').label('Additional Field 5'),
+    devEUI: yup.string().required('DevEUI is required').label('DevEUI'),
+    appKey: yup.string().required('App Key is required').label('App Key'),
+    deviceID: yup.string().required('Device ID is required').label('Device ID'),
 });
 
-const { errors, validate, defineField } = useForm({
+const { errors, validate, defineField, handleSubmit, setFieldValue } = useForm({
     validationSchema: schema
 });
 
@@ -27,10 +27,25 @@ const [selectedModel] = defineField('selectedModel')
 const [selectedHardware] = defineField('selectedHardware')
 const [selectedFirmware] = defineField('selectedFirmware')
 const [selectedFrequency] = defineField('selectedFrequency')
-const joinEUI = ref('')
-const devEUI = ref('')
-const appKey = ref('')
+const [joinEUI] = defineField('joinEUI')
+const [devEUI] = defineField('devEUI')
+const [appKey] = defineField('appKey')
 const [deviceID] = defineField('deviceID')
+
+
+
+const debouncedUpdateDeviceID = _.debounce((newVal: string) => {
+  if (!deviceID.value) {
+    deviceID.value = newVal;
+  }
+}, 200);
+
+// Watcher to update deviceID based on joinEUI
+watch(joinEUI, (newVal) => {
+  debouncedUpdateDeviceID(newVal);
+});
+
+
 
 const brand = ref(['Dragino Technology', 'Xignal', 'Cital']);
 const model = ref(['Temperature', 'Humidity', 'Temperature & Humidity']);
@@ -100,7 +115,7 @@ const createOrganization = async () => {
     });
 }
 
-const validateForm = async () => {
+const validateForm = handleSubmit (async () => {
     await validate();
     if (Object.keys(errors.value).length) {
         return console.log('Validation failed:', errors.value);
@@ -110,9 +125,17 @@ const validateForm = async () => {
         loading.value = false;
         createOrganization();
     }, 2000);
+});
+
+const generateAppKey = () => {
+  const characters = '0123456789ABCDEF';
+  let result = '';
+  for (let i = 0; i < 32; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  appKey.value = result;
 };
 
-const test = ref('')
 
 </script>
 
@@ -202,8 +225,8 @@ const test = ref('')
                 <label class="text-600 font-medium mb-2 ml-2">
                   Join-EUI<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask v-restrict v-capitalize  v-model="joinEUI" mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.joinEUI }"/>
-                <small id="selectedPurpose-help" class="p-error">{{ errors.joinEUI }}</small>
+                <InputMask v-restrict   v-model="joinEUI" mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.joinEUI }"/>
+                <small class="p-error">{{ errors.joinEUI }}</small>
               </div>
             </div>
 
@@ -212,7 +235,7 @@ const test = ref('')
                 <label class="text-600 font-medium mb-2 ml-2">
                   Dev-EUI<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask v-restrict v-capitalize v-model="devEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.devEUI }"/>
+                <InputMask v-restrict  v-model="devEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.devEUI }"/>
                 <small id="selectedPurpose-help" class="p-error">{{ errors.devEUI }}</small>
               </div>
             </div>
@@ -222,7 +245,10 @@ const test = ref('')
                 <label class="text-600 font-medium mb-2 ml-2">
                   App-Key<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask v-restrict v-capitalize v-model="appKey"  mask="** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• •• •• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.appKey }"/>
+                <div class="input-group">
+                  <InputMask class="w-full" id="basic" v-restrict v-model="appKey" mask="** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• •• •• •• •• •• •• •• •• ••"/>
+                  <Button type="button" size="small" @click="generateAppKey">Generate</Button>
+                </div>
                 <small id="selectedPurpose-help" class="p-error">{{ errors.appKey }}</small>
               </div>
             </div>
@@ -232,7 +258,7 @@ const test = ref('')
                 <label class="text-600 font-medium mb-2 ml-2">
                  End-Device ID<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask id="basic" v-model="deviceID"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.deviceID }"/>
+                <InputMask id="basic" v-restrict  v-model="deviceID"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.deviceID }"/>
                 <small id="selectedPurpose-help" class="p-error">{{ errors.deviceID }}</small>
               </div>
             </div>
@@ -254,9 +280,14 @@ const test = ref('')
 
 }
 
+
+
+
 .width{
   width: 550px;
 }
+
+
 
 .required-asterisk {
   color: rgb(253, 87, 87);
