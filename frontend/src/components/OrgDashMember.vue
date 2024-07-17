@@ -339,10 +339,9 @@ const [description] = defineField('description')
 
 
 .container {
-  display: flex;
-  justify-content: center; /* Centers the child div horizontally */
-  align-items: center; /* Centers the child div vertically */
-   /* Makes the container take the full viewport height */
+    display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 

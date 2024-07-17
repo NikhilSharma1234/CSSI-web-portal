@@ -64,7 +64,7 @@ const routeToForgotPassword = () => {
 
 <template>
   <div class="center-content">
-    <div class="surface-card p-4 shadow-3 border-round w-full lg:w-4">
+    <div class="surface-card p-8 shadow-3 border-round w-full lg:w-4">
       <div class="text-center mb-6">
         <img src="../assets/unr2.png" alt="Image" height="50" class="mb-3" />
         <div class="text-900 text-3xl font-medium mb-3">Welcome Back!</div>
@@ -123,11 +123,15 @@ const routeToForgotPassword = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 80vh;
+}
+.height{
+    height: 5vh;
+    font-size: 18px;
 }
 
-.height {
-  height: 7vh;
-  font-size: 18px;
+.weight{
+    height: 4vh;
+    font-size: 14px;
 }
 </style>

@@ -23,6 +23,8 @@ auth.onAuthStateChanged(function (user) {
     <RouterView />
     <h1>Hello, this is our home page!</h1>
   </div>
+
+  
 </template>
   
 <style scoped>
