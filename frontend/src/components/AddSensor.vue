@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import sideBar from './side-bar.vue';
 import { ref, watch } from 'vue';
-import { useForm } from 'vee-validate'
+import { useForm, useField } from 'vee-validate'
 import * as yup from 'yup'
-import vRestrict from '../assets/functions/restrict'
 
 const schema = yup.object({
     selectedBrand: yup.string().required('Sensor Brand is required').label('Sensor Brand'),
@@ -17,8 +16,14 @@ const schema = yup.object({
     deviceID: yup.string().required('Device ID is required').label('Device ID'),
 });
 
-const { errors, validate, defineField, handleSubmit, setFieldValue } = useForm({
-    validationSchema: schema
+const { errors, validate, defineField, handleSubmit } = useForm({
+    validationSchema: schema,
+    validateOnMount: false
+});
+
+const { errorMessage: joinEUIError, validate: validateJoinEUI } = useField('joinEUI', {
+    initialValue: '',
+    rules: schema.fields.joinEUI
 });
 
 const [selectedBrand] = defineField('selectedBrand')
@@ -46,8 +51,10 @@ const showModelDropdown = ref(false);
 const showHardwareDropdown = ref(false);
 const showFirmwareDropdown = ref(false);
 const showAdditionalField1 = ref(false);
+const showAdditionalField2 = ref(false);
 const showAdditionalFields = ref(false);
-const loading = ref(false)
+const loading = ref(false);
+const isFieldDisabled = ref(false);
 
 watch(selectedBrand, (newVal) => {
     if (newVal) {
@@ -84,7 +91,7 @@ watch(selectedFirmware, (newVal) => {
 
 watch(selectedFrequency, (newVal) => {
     if (newVal) {
-        showAdditionalFields.value = true;
+        showAdditionalField2.value = true;
     }
 });
 
@@ -125,6 +132,46 @@ const generateAppKey = () => {
   appKey.value = result;
 };
 
+const restrictInput = (e: KeyboardEvent) => {
+    const char = e.key.toUpperCase(); 
+    if (!/[0-9A-F]/.test(char)) {
+        e.preventDefault(); 
+    }
+};
+
+const validateJoinEUIField = async () => {
+    await validateJoinEUI();
+    if (joinEUIError.value) {
+        console.log('JoinEUI validation failed:', joinEUIError.value);
+        return false; 
+    }
+    return true; 
+};
+
+const showFields = async () => {
+    const isValidJoinEUI = await validateJoinEUIField();
+    if (isValidJoinEUI) {
+        showAdditionalFields.value = true;
+        isFieldDisabled.value = true;
+    }
+};
+
+const resetForm = () => {
+    isFieldDisabled.value = false;
+
+    joinEUI.value = '';
+    appKey.value ='';
+    devEUI.value ='';
+    deviceID.value='';
+
+    // Hide additional fields
+    showAdditionalFields.value = false;
+};
+
+const deviceValue = () => {
+  deviceID.value = devEUI.value;
+}
+
 
 </script>
 
@@ -138,14 +185,14 @@ const generateAppKey = () => {
         <h5 class="-mt-3">To Application-ID</h5>
       </div>
       <TabView>
-        <TabPanel header="QR Scanning Registration">
+        <TabPanel header="QR Scanning Registration (Camera)">
           <div class="p-3">
             <div class="text-center text-600 text-sm">
               Register new device using the QR code on the back of your sensor
             </div>
             <Divider class="mt-4"/>
             <div class="text-center mt-4">
-              <Button outlined>Use QR Code</Button>
+              <Button size="large">Use QR Code</Button>
             </div>
           </div>
         </TabPanel>
@@ -158,7 +205,7 @@ const generateAppKey = () => {
           <div class="grid">
             <div class="col-12 md:col-6">
               <div class="flex flex-column align-items-center mt-4">
-                <label class="text-600 font-medium mb-2 mr-7">
+                <label class="text-600 font-medium mb-2 mrgnB">
                   Sensor Brand<span class="required-asterisk"> *</span>
                 </label>
                 <Dropdown v-model="selectedBrand" class="w-full md:w-12rem" :options="brand" placeholder="Select Brand" :class="{ 'p-invalid': errors.selectedBrand }"></Dropdown>
@@ -168,7 +215,7 @@ const generateAppKey = () => {
 
             <div class="col-12 md:col-6" v-if="showModelDropdown">
               <div class="flex flex-column align-items-center mt-4">
-                <label class="text-600 font-medium mb-2 mr-7">
+                <label class="text-600 font-medium mb-2 mrgnM">
                   Sensor Model<span class="required-asterisk"> *</span>
                 </label>
                 <Dropdown v-model="selectedModel" class="w-full md:w-12rem" :options="model" placeholder="Select Model" :class="{ 'p-invalid': errors.selectedModel }"></Dropdown>
@@ -178,8 +225,8 @@ const generateAppKey = () => {
 
             <div class="col-12 md:col-6" v-if="showHardwareDropdown">
               <div class="flex flex-column align-items-center mt-4">
-                <label class="text-600 font-medium mb-2 mr-5">
-                  Hardware Version<span class="required-asterisk"> *</span>
+                <label class="text-600 font-medium mb-2 mrgnH">
+                 Hardware Version<span class="required-asterisk"> *</span>
                 </label>
                 <Dropdown v-model="selectedHardware" class="w-full md:w-12rem" :options="hardware" placeholder="Select Version" :class="{ 'p-invalid': errors.selectedHardware }"></Dropdown>
                 <small id="selectedPurpose-help" class="p-error">{{ errors.selectedHardware }}</small>
@@ -187,7 +234,7 @@ const generateAppKey = () => {
             </div>
             <div class="col-12 md:col-6" v-if="showFirmwareDropdown">
               <div class="flex flex-column align-items-center mt-4">
-                <label class="text-600 font-medium mb-2 mr-5">
+                <label class="text-600 font-medium mb-2 mrgnF">
                   Firmware Version<span class="required-asterisk"> *</span>
                 </label>
                 <Dropdown v-model="selectedFirmware" class="w-full md:w-12rem" :options="firmware" placeholder="Select Version" :class="{ 'p-invalid': errors.selectedFirmware }"></Dropdown>
@@ -199,7 +246,7 @@ const generateAppKey = () => {
           <div v-if="showAdditionalField1" class="grid">
             <div class="col-12">
               <div class="flex flex-column mt-4">
-                <label class="text-600 font-medium mb-2 ml-2">
+                <label class="text-600 font-medium mb-2 ">
                   Frequency Plan<span class="required-asterisk"> *</span>
                 </label>
                 <Dropdown v-model="selectedFrequency" class="w-full " :options="frequency" placeholder="Select Option" :class="{ 'p-invalid': errors.selectedFrequency }"></Dropdown>
@@ -208,72 +255,110 @@ const generateAppKey = () => {
             </div>
           </div>
 
-          <div v-if="showAdditionalFields" class="grid">
+          <div v-if="showAdditionalField2" class="grid">
             <div class="col-12">
               <div class="flex flex-column  mt-4">
-                <label class="text-600 font-medium mb-2 ml-2">
+                <label class="text-600 font-medium mb-2 ">
                   Join-EUI<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask v-restrict   v-model="joinEUI" mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.joinEUI }"/>
+                <div >
+                  <InputGroup>
+                    <InputMask :disabled="isFieldDisabled" @keydown="restrictInput($event as KeyboardEvent)" v-model="joinEUI" mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.joinEUI }"/>
+                    <Button v-if="!isFieldDisabled" class="button-group" type="button" @click="showFields">Confirm</Button>
+                    <Button v-else type="button" class="button-group" @click="resetForm">Reset</Button>
+                </InputGroup>
                 <small class="p-error">{{ errors.joinEUI }}</small>
+                <div>
+                
+              </div>
+              </div>
+                
               </div>
             </div>
-
+          </div>
+          <div v-if="showAdditionalFields" class="grid">
             <div class="col-12">
-              <div class="flex flex-column mt-4">
-                <label class="text-600 font-medium mb-2 ml-2">
+              <div class="flex flex-column mt-2">
+                <label class="text-600 font-medium mb-2 ">
                   Dev-EUI<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask v-restrict  v-model="devEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.devEUI }"/>
+                <InputMask @keydown="restrictInput($event as KeyboardEvent)"  v-model="devEUI"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.devEUI }"/>
                 <small id="selectedPurpose-help" class="p-error">{{ errors.devEUI }}</small>
               </div>
             </div>
 
             <div class="col-12">
-              <div class="flex flex-column mt-4">
-                <label class="text-600 font-medium mb-2 ml-2">
+              <div class="flex flex-column ">
+                <label class="text-600 font-medium mb-2 ">
                   App-Key<span class="required-asterisk"> *</span>
                 </label>
-                <div class="input-group">
-                  <InputMask class="w-full" id="basic" v-restrict v-model="appKey" mask="** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• •• •• •• •• •• •• •• •• ••"/>
-                  <Button type="button" size="small" @click="generateAppKey">Generate</Button>
-                </div>
-                <small id="selectedPurpose-help" class="p-error">{{ errors.appKey }}</small>
+                  <InputGroup>
+                  <InputMask @keydown="restrictInput($event as KeyboardEvent)" v-model="appKey" mask="** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• •• •• •• •• •• •• •• •• ••"/>
+                  <Button class="button-group " type="button" @click="generateAppKey">Generate</Button>
+                </InputGroup>
+                  <small id="selectedPurpose-help" class="p-error">{{ errors.appKey }}</small>
               </div>
             </div>
 
-            <div class="col-12">
-              <div class="flex flex-column mt-4">
-                <label class="text-600 font-medium mb-2 ml-2">
+            <div class="col-12 mt-3">
+              <div class="flex flex-column ">
+                <label class="text-600 font-medium mb-2 ">
                  End-Device ID<span class="required-asterisk"> *</span>
                 </label>
-                <InputMask id="basic" v-restrict  v-model="deviceID"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.deviceID }"/>
+                <InputGroup>
+                <InputMask id="basic" @keydown="restrictInput($event as KeyboardEvent)"  v-model="deviceID"  mask="** ** ** ** ** ** ** **" placeholder="•• •• •• •• •• •• •• ••" :class="{ 'p-invalid': errors.deviceID }"/>
+                <Button class="button-group" type="button" @click="deviceValue">Use DevEUI</Button>
+              </InputGroup>
                 <small id="selectedPurpose-help" class="p-error">{{ errors.deviceID }}</small>
               </div>
-            </div>
-            <div class="flex pt-4 justify-content-end">
-                <Button label="Add Sensor" :loading="loading" icon="pi pi-arrow-right" type="submit" iconPos="right" />
-            </div>
+            </div> 
           </div>
+          <div class="flex pt-4 justify-content-center mt-5">
+                <Button label="Add Sensor" size="large" :loading="loading"  type="submit"  />
+            </div>
         </form>
         </TabPanel>
+      
       </TabView>
     </div>
   </div>
 </template>
 
+
 <style scoped>
+
+
 .container {
   display: flex;
   justify-content: center;
+  margin-top: 5%;
 
 }
 
+.mrgnB {
+  margin-right: 75px
+}
+.mrgnM {
+  margin-right: 75px
+}.mrgnH {
+  margin-right: 40px
+}.mrgnF {
+  margin-right: 45px
+}
 
+.button-group{
+justify-content: center;
+width:124px;
+}
 
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Space between input mask and button */
+}
 
 .width{
-  width: 550px;
+  width: 640px;
 }
 
 
@@ -282,4 +367,7 @@ const generateAppKey = () => {
   color: rgb(253, 87, 87);
   /* Makes the asterisk red */
 }
+
+
+
 </style>
