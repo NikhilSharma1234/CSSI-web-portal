@@ -68,7 +68,7 @@ const onSubmit = handleSubmit(async () => {
 </script>
 <template>
 <div class="center-content">
-<div class="surface-card p-8 shadow-3 border-round w-full lg:w-4">
+<div class="surface-card p-8 shadow-1 border-round w-full lg:w-4">
     <div class="text-center mb-6">
         <img src="../assets/unr2.png" alt="Image" height="50" class="mb-3" />
         <div class="text-900 text-3xl font-medium mb-3">Create your account</div>

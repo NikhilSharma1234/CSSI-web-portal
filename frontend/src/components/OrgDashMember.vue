@@ -90,7 +90,7 @@ const [description] = defineField('description')
       <sideBar></sideBar>
       <RouterView />
 
-      <div class="card p-4 shadow-3 border-round">
+      <div class="card p-4 shadow-1 border-round">
           <div class="text-center">
               <h2>Organization Name</h2>
               <h5 class="-mt-3">Organization-ID</h5>

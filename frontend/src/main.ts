@@ -82,6 +82,7 @@ import ProgressSpinner from 'primevue/progressspinner';
 import Rating from 'primevue/rating';
 import RadioButton from 'primevue/radiobutton';
 import Ripple from 'primevue/ripple';
+import Chart from 'primevue/chart';
 import Row from 'primevue/row';
 import SelectButton from 'primevue/selectbutton';
 import ScrollPanel from 'primevue/scrollpanel';
@@ -229,6 +230,7 @@ app.component('TreeSelect', TreeSelect);
 app.component('TreeTable', TreeTable);
 app.component('TriStateCheckbox', TriStateCheckbox);
 app.component('VirtualScroller', VirtualScroller);
+app.component('Chart', Chart)
 
 // Import the functions you need from the SDKs you need
 

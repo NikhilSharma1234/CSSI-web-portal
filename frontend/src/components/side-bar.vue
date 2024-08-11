@@ -285,10 +285,10 @@ watch(() => themeStore.currentTheme, (newTheme) => {
 <style scoped>
 .toggle-btn {
   position: fixed;
-  top: 20px;
+  top: 30px;
   /* Adjust as needed */
-  left: 20px;
+  left: 30px;
   /* Adjust as needed */
-  scale: 1.3;
+  scale: 1.6;
 }
 </style>
