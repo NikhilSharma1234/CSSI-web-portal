@@ -64,7 +64,7 @@ const requestOrganization = async () => {
  <RouterView />
 
 
- <div class="card width p-4 shadow-3 border-round">
+ <div class="card width p-4 shadow-1 border-round">
 
   <div class="text-center mb-5">
   <h2 > Join Request Pending</h2>

@@ -3,8 +3,10 @@ import sideBar from './side-bar.vue';
 import { ref, onMounted } from 'vue';
 import { SensorList } from '@/store';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import { useRouter } from 'vue-router'
 
 const sensors = ref();
+const router = useRouter();
 
 
 const owners = ref([
@@ -13,6 +15,10 @@ const owners = ref([
     { name: 'George Nesch' },
     { name: 'Michael Nesch' },
 ])
+
+const route = async () => {
+  router.push('/addsensor')
+}
 
 
 const filters = ref({
@@ -33,7 +39,7 @@ onMounted(() => {
   <div class="container">
     <sideBar></sideBar>
     <RouterView />
-    <div class="card p-4 shadow-3 border-round">
+    <div class="card p-4 shadow-1 border-round">
       <div class="text-center">
         <h2>Application Name</h2>
         <h5 class="-mt-3">Application-ID</h5>
@@ -44,7 +50,7 @@ onMounted(() => {
         All sensors that belong to this application will be displayed here.
       </div>
       <div class="flex mt-5 justify-content-center">
-      <Button>Add New Sensor</Button>
+      <Button @click="route">Add New Sensor</Button>
     </div>
   
       <DataTable
@@ -101,9 +107,9 @@ onMounted(() => {
 
 .container {
   display: flex;
-  justify-content: center; /* Centers the child div horizontally */
-  align-items: center; /* Centers the child div vertically */
-   /* Makes the container take the full viewport height */
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
 }
 
 

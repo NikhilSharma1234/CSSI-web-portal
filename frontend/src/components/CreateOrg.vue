@@ -92,12 +92,12 @@ const routePage = async () => {
 
 
 <template>
+
+<sideBar></sideBar>
+<RouterView />
     <div class="container">
-        <sideBar></sideBar>
-        <RouterView />
 
-
-        <div class="card width p-4 shadow-3 border-round">
+        <div class="card width p-4 shadow-1 border-round">
             <div class="text-center mb-6">
                 <h2>Create Organization</h2>
                 <p label="dan" class="text-500 line-height-2">Create your own organization or <RouterLink to="joinorg"
@@ -105,7 +105,6 @@ const routePage = async () => {
                             pre-existing one</a></RouterLink>.</p>
                 <Divider />
             </div>
-
 
             <div class="card flex justify-content-center">
                 <Stepper linear v-model:activeStep="active">
@@ -262,13 +261,12 @@ const routePage = async () => {
 .container {
     display: flex;
     justify-content: center;
-    /* Centers the child div horizontally */
-    align-items: center;
-    /* Centers the child div vertically */
+    align-items: center; 
+    min-height: 90vh;   
 }
 
 .width {
-    width: 80%;
+    width: 50%;
 }
 
 .p-stepper {
@@ -278,5 +276,4 @@ const routePage = async () => {
 
 .required-asterisk {
     color: rgb(253, 87, 87);
-    /* Makes the asterisk red */
 }</style>

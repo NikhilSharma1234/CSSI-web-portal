@@ -68,7 +68,7 @@ const onSubmit = handleSubmit(async () => {
 </script>
 <template>
 <div class="center-content">
-<div class="surface-card p-4 shadow-3 border-round w-full lg:w-4">
+<div class="surface-card p-8 shadow-1 border-round w-full lg:w-4">
     <div class="text-center mb-6">
         <img src="../assets/unr2.png" alt="Image" height="50" class="mb-3" />
         <div class="text-900 text-3xl font-medium mb-3">Create your account</div>
@@ -111,7 +111,7 @@ const onSubmit = handleSubmit(async () => {
         </div>
 
 
-        <Button  :loading="loading" label="Sign up" icon="pi pi-user" class="w-full mt-3 height" type="submit"></Button>
+        <Button  :loading="loading" label="Sign up" icon="pi pi-user" class=" mt-3 height" type="submit"></Button>
 
     </form>
 </div>
@@ -123,17 +123,17 @@ const onSubmit = handleSubmit(async () => {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 80vh;
   }
 
 
 .height{
-    height: 7vh;
+    height: 5vh;
     font-size: 18px;
 }
 
 .weight{
-    height: 6vh;
+    height: 4vh;
     font-size: 14px;
 }
 
