@@ -68,7 +68,7 @@ const requestOrganization = async () => {
  <RouterView />
 
 
- <div class="card width p-4 shadow-3 border-round" v-if="!showOrgAwait">
+ <div class="card width p-4 shadow-1 border-round" v-if="!showOrgAwait">
     <form @submit.prevent="onSubmit ">    
   <div class="text-center mb-5">
   <h2 >Join Organization</h2>
@@ -120,14 +120,15 @@ const requestOrganization = async () => {
 
 
 .width{
-  width: 80%;
+  width: 50%;
 }
 
 
 .container {
   display: flex;
   justify-content: center; /* Centers the child div horizontally */
-  align-items: center; /* Centers the child div vertically */
+  align-items: center;
+  min-height: 90vh; 
 }
 
 

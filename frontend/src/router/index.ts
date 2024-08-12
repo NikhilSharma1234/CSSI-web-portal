@@ -9,6 +9,7 @@ import OrgDashView from '@/views/OrgDashView.vue'
 import SensorView from '@/views/SensorView.vue'
 import AddSensorView from '@/views/AddSensorView.vue'
 import CreateAppView from '@/views/CreateAppView.vue'
+import SensorDetailsView from '@/views/SensorDetailsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,14 +56,20 @@ const router = createRouter({
     },
     {
       path: '/sensor',
-      name: 'Sensor Dashboard',
+      name: 'Application Sensor Dashboard',
       component: SensorView
     },
     {
       path: '/addsensor',
       name: 'Add Sensor',
       component: AddSensorView
-    }
+    },
+    {
+      path: '/sensordetails',
+      name: 'Sensor Details',
+      component: SensorDetailsView
+    },
+
 
   ]
 })

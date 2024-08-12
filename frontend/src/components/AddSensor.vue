@@ -9,7 +9,7 @@ const schema = yup.object({
     selectedModel: yup.string().required('Sensor Model is required').label('Sensor Model'),
     selectedHardware: yup.string().required('Hardware Version is required').label('Hardware Version'),
     selectedFirmware: yup.string().required('Firmware Version is required').label('Firmware Version'),
-    selectedFrequency: yup.string().required('This field is required').label('Frequency'),
+    selectedFrequency: yup.string().required('Frequency Band is required').label('Frequency'),
     joinEUI: yup.string().required('JoinEUI is required').label('JoinEUI'),
     devEUI: yup.string().required('DevEUI is required').label('DevEUI'),
     appKey: yup.string().required('App Key is required').label('App Key'),
@@ -179,23 +179,12 @@ const deviceValue = () => {
   <sideBar></sideBar>
   <RouterView />
   <div class="container">
-    <div class="card width shadow-2">
+    <div class="card width shadow-1">
       <div class="text-center">
         <h2>Register New Sensor</h2>
         <h5 class="-mt-3">To Application-ID</h5>
       </div>
       <TabView>
-        <TabPanel header="QR Scanning Registration (Camera)">
-          <div class="p-3">
-            <div class="text-center text-600 text-sm">
-              Register new device using the QR code on the back of your sensor
-            </div>
-            <Divider class="mt-4"/>
-            <div class="text-center mt-4">
-              <Button size="large">Use QR Code</Button>
-            </div>
-          </div>
-        </TabPanel>
         <TabPanel header="Manual Registration (Default) ">
           <div class="text-center text-600 text-sm mt-3">
             Register new device using the default setup provided by LoRaWan repository
@@ -238,7 +227,7 @@ const deviceValue = () => {
                   Firmware Version<span class="required-asterisk"> *</span>
                 </label>
                 <Dropdown v-model="selectedFirmware" class="w-full md:w-12rem" :options="firmware" placeholder="Select Version" :class="{ 'p-invalid': errors.selectedFirmware }"></Dropdown>
-                <small id="selectedPurpose-help" class="p-error">{{ errors.selectedFirmware }}</small>
+                <small id="selectedPurpose-help" class="p-error ml-4">{{ errors.selectedFirmware }}</small>
               </div>
             </div>
           </div>
@@ -318,7 +307,17 @@ const deviceValue = () => {
             </div>
         </form>
         </TabPanel>
-      
+        <TabPanel header="QR Scanning Registration (Camera)">
+          <div class="p-3">
+            <div class="text-center text-600 text-sm">
+              Register new device using the QR code on the back of your sensor
+            </div>
+            <Divider class="mt-4"/>
+            <div class="text-center mt-4">
+              <Button size="large">Use QR Code</Button>
+            </div>
+          </div>
+        </TabPanel>
       </TabView>
     </div>
   </div>
@@ -360,6 +359,12 @@ width:124px;
 .width{
   width: 640px;
 }
+
+.p-error{
+  margin-right: 35px;
+}
+
+
 
 
 
