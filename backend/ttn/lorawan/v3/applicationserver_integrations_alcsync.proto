@@ -17,8 +17,8 @@ syntax = "proto3";
 package ttn.lorawan.v3;
 
 import "google/protobuf/timestamp.proto";
-import "thethings/json/annotations.proto";
-import "validate/validate.proto";
+import "third_party/thethings/json/annotations.proto";
+import "third_party/validate/validate.proto";
 
 option go_package = "go.thethings.network/lorawan-stack/v3/pkg/ttnpb";
 

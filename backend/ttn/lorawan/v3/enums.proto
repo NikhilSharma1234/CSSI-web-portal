@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package ttn.lorawan.v3;
 
-import "thethings/json/annotations.proto";
+import "third_party/thethings/json/annotations.proto";
 
 option go_package = "go.thethings.network/lorawan-stack/v3/pkg/ttnpb";
 

@@ -17,11 +17,11 @@ syntax = "proto3";
 package ttn.lorawan.v3;
 
 import "google/protobuf/duration.proto";
-import "protoc-gen-openapiv2/options/annotations.proto";
-import "thethings/json/annotations.proto";
+import "third_party/protoc-gen-openapiv2/options/annotations.proto";
+import "third_party/thethings/json/annotations.proto";
 import "ttn/lorawan/v3/keys.proto";
 import "ttn/lorawan/v3/lorawan.proto";
-import "validate/validate.proto";
+import "third_party/validate/validate.proto";
 
 option go_package = "go.thethings.network/lorawan-stack/v3/pkg/ttnpb";
 
