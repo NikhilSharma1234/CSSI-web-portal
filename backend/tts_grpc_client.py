@@ -32,13 +32,12 @@ def run():
     bearer_token = os.getenv('BEARER_TOKEN')
     metadata = [('authorization', f'Bearer {bearer_token}')]
     
-    user_id = {{}}
-    collaborator = identifiers_pb2.OrganizationOrUserIdentifiers(user_ids = user_id)
+    collaborator = identifiers_pb2.OrganizationOrUserIdentifiers(user_ids = identifiers_pb2.UserIdentifiers(user_id="nikhil"))
 
     print("Will try to greet world ...")
-    with grpc.secure_channel("tts.rd.unr.edu:1884", credentials) as channel:
+    with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
         stub = application_services_pb2_grpc.ApplicationRegistryStub(channel)
-        response = stub.List(application_pb2.ListApplicationsRequest(collaborator = collaborator), metadata=metadata)
+        response = stub.List(application_pb2.ListApplicationsRequest(collaborator = collaborator) , metadata=metadata)
     print(response)
 
 
