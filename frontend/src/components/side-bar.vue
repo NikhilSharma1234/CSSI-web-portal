@@ -5,19 +5,21 @@ import { ref, onMounted, watch } from 'vue';
 import Button from 'primevue/button';
 import Sidebar from 'primevue/sidebar';
 import store from '../store';
+import { getAllApplications } from '@/helpers';
 
 const PrimeVue = usePrimeVue();
 const themeStore = useThemeStore();
 const themes = ref(['aura-light-cyan', 'aura-dark-cyan']);
 const visible = ref(false);
 const checked = ref(false);
+let applicationsFromAPI = ref();
 
 const organizations = ref([
   {
     name: 'Tech Solutions Inc.',
     items: [
       { name: 'Dashboard' },
-  
+
     ],
   },
   {
@@ -107,8 +109,9 @@ const logout = async () => {
   await store.dispatch('logOut')
 }
 
-onMounted(() => {
+onMounted(async () => {
   checked.value = themeStore.currentTheme === themes.value[0];
+  applicationsFromAPI = await getAllApplications()
 });
 
 watch(() => themeStore.currentTheme, (newTheme) => {
@@ -151,12 +154,14 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                     enterActiveClass: 'slidedown',
                     leaveToClass: 'hidden',
                     leaveActiveClass: 'slideup'
-                  }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                  }"
+                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
                     <i class="pi pi-folder mr-2"></i>
                     <span class="font-medium">{{ org.name }}</span>
                     <i class="pi pi-chevron-down ml-auto"></i>
                   </a>
-                  <ul class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+                  <ul
+                    class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
                     <li v-for="item in org.items" :key="item.name">
                       <a v-ripple v-styleclass="{
                         selector: '@next',
@@ -164,8 +169,10 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                         enterActiveClass: 'slidedown',
                         leaveToClass: 'hidden',
                         leaveActiveClass: 'slideup'
-                      }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                        <i :class="item.name === 'Dashboard' ? 'pi pi-chart-bar'+ ' mr-2' : 'pi pi-folder-open'  + ' mr-2'"></i>
+                      }"
+                        class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                        <i
+                          :class="item.name === 'Dashboard' ? 'pi pi-chart-bar' + ' mr-2' : 'pi pi-folder-open' + ' mr-2'"></i>
                         <span class="font-medium">{{ item.name }}</span>
                       </a>
                     </li>
@@ -194,12 +201,14 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                     enterActiveClass: 'slidedown',
                     leaveToClass: 'hidden',
                     leaveActiveClass: 'slideup'
-                  }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                  }"
+                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
                     <i class="pi pi-folder mr-2"></i>
                     <span class="font-medium">{{ org.name }}</span>
                     <i class="pi pi-chevron-down ml-auto"></i>
                   </a>
-                  <ul class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+                  <ul
+                    class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
                     <li v-for="item in org.items" :key="item.name">
                       <a v-ripple v-styleclass="{
                         selector: '@next',
@@ -207,12 +216,15 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                         enterActiveClass: 'slidedown',
                         leaveToClass: 'hidden',
                         leaveActiveClass: 'slideup'
-                      }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                        <i :class="item.name === 'Dashboard' ? 'pi pi-chart-bar'+ ' mr-2' : 'pi pi-th-large'  + ' mr-2'"></i>
+                      }"
+                        class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                        <i
+                          :class="item.name === 'Dashboard' ? 'pi pi-chart-bar' + ' mr-2' : 'pi pi-th-large' + ' mr-2'"></i>
                         <span class="font-medium">{{ item.name }}</span>
                         <i v-if="item.items && item.name !== 'Dashboard'" class="pi pi-chevron-down ml-auto"></i>
                       </a>
-                      <ul v-if="item.items" class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
+                      <ul v-if="item.items"
+                        class="list-none py-0 pl-3 pr-0 m-0 hidden overflow-y-hidden transition-all transition-duration-400 transition-ease-in-out">
                         <li v-for="subItem in item.items" :key="subItem.name">
                           <a v-ripple v-styleclass="{
                             selector: '@next',
@@ -220,8 +232,10 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                             enterActiveClass: 'slidedown',
                             leaveToClass: 'hidden',
                             leaveActiveClass: 'slideup'
-                          }" class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
-                            <i :class="subItem.name === 'Dashboard' ? 'pi pi-chart-bar'+ ' mr-2' : 'pi pi-wave-pulse'  + ' mr-2'"></i>
+                          }"
+                            class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                            <i
+                              :class="subItem.name === 'Dashboard' ? 'pi pi-chart-bar' + ' mr-2' : 'pi pi-wave-pulse' + ' mr-2'"></i>
                             <span class="font-medium">{{ subItem.name }}</span>
                           </a>
                         </li>
@@ -247,13 +261,15 @@ watch(() => themeStore.currentTheme, (newTheme) => {
               </div>
               <ul class="list-none p-0 m-0 overflow-hidden">
                 <li>
-                  <a v-ripple class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                  <a v-ripple
+                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
                     <i class="pi pi-cog mr-2"></i>
                     <span class="font-medium">Settings</span>
                   </a>
                 </li>
                 <li>
-                  <a v-ripple class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
+                  <a v-ripple
+                    class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
                     <i class="pi pi-question-circle mr-2"></i>
                     <span class="font-medium">Help</span>
                   </a>
@@ -282,13 +298,11 @@ watch(() => themeStore.currentTheme, (newTheme) => {
 </template>
 
 
-<style scoped>
-.toggle-btn {
+<style scoped>.toggle-btn {
   position: fixed;
   top: 30px;
   /* Adjust as needed */
   left: 30px;
   /* Adjust as needed */
   scale: 1.6;
-}
-</style>
+}</style>
