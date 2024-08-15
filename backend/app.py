@@ -70,10 +70,10 @@ def health():
 def applications():
         response_object = {'status': 'success'}
 
-        with open('cert.crt', 'rb') as c:
-            cert = c.read()
-        with open('cert.key', 'rb') as k:
-            key = k.read()
+        # with open('cert.crt', 'rb') as c:
+        #     cert = c.read()
+        # with open('cert.key', 'rb') as k:
+        #     key = k.read()
 
         # credentials = grpc.ssl_channel_credentials(
         #     certificate_chain = cert,
