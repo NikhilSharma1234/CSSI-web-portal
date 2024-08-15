@@ -26,3 +26,12 @@ export async function checkServerHealth(): Promise<boolean> {
     }
     return serverDown
 }
+
+export async function getAllApplications(): Promise<any> {
+    const path = (import.meta.env.VITE_DB_URL + '/applications')
+    axios.get(path).then((response) => {
+        return response.data["applications"]
+    }).catch((e) => {
+        console.log(e)
+    })
+}

@@ -10,3 +10,8 @@ htmlcov/
 docs/_build/
 .env
 *.env
+*.crt
+*.key
+*.proto
+/third_party
+/ttn
