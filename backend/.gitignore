@@ -13,3 +13,5 @@ docs/_build/
 *.crt
 *.key
 *.proto
+/third_party
+/ttn
