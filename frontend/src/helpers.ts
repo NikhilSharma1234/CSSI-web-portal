@@ -1,11 +1,13 @@
 import axios from 'axios';
 import type { User } from 'firebase/auth';
 
-export async function registerUserInDb(user: User) {
+export async function registerUserInDb(user: User, password: string = '', user_id = '') {
     const path = (import.meta.env.VITE_DB_URL + '/user')
     const payload = {
+        'user_id': user_id,
         'name': user.displayName,
-        'email': user.email
+        'email': user.email,
+        'password': password
     }
     axios.post(path, payload).then((response) => {
         console.log(response)

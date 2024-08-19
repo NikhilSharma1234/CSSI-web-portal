@@ -6,7 +6,7 @@ import warnings
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from generated.ttn.lorawan.v3 import identifiers_pb2 as ttn_dot_lorawan_dot_v3_dot_identifiers__pb2
 from generated.ttn.lorawan.v3 import rights_pb2 as ttn_dot_lorawan_dot_v3_dot_rights__pb2
-from ttn.lorawan.v3 import user_pb2 as ttn_dot_lorawan_dot_v3_dot_user__pb2
+from generated.ttn.lorawan.v3 import user_pb2 as ttn_dot_lorawan_dot_v3_dot_user__pb2
 
 GRPC_GENERATED_VERSION = '1.65.4'
 GRPC_VERSION = grpc.__version__

@@ -17,9 +17,9 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from generated.third_party.thethings.flags import annotations_pb2 as third__party_dot_thethings_dot_flags_dot_annotations__pb2
 from generated.third_party.thethings.json import annotations_pb2 as third__party_dot_thethings_dot_json_dot_annotations__pb2
 from generated.ttn.lorawan.v3 import contact_info_pb2 as ttn_dot_lorawan_dot_v3_dot_contact__info__pb2
-from ttn.lorawan.v3 import enums_pb2 as ttn_dot_lorawan_dot_v3_dot_enums__pb2
+from generated.ttn.lorawan.v3 import enums_pb2 as ttn_dot_lorawan_dot_v3_dot_enums__pb2
 from generated.ttn.lorawan.v3 import identifiers_pb2 as ttn_dot_lorawan_dot_v3_dot_identifiers__pb2
-from ttn.lorawan.v3 import picture_pb2 as ttn_dot_lorawan_dot_v3_dot_picture__pb2
+from generated.ttn.lorawan.v3 import picture_pb2 as ttn_dot_lorawan_dot_v3_dot_picture__pb2
 from generated.ttn.lorawan.v3 import rights_pb2 as ttn_dot_lorawan_dot_v3_dot_rights__pb2
 from generated.third_party.validate import validate_pb2 as third__party_dot_validate_dot_validate__pb2
 

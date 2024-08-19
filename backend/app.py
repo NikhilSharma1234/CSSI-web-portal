@@ -4,13 +4,17 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 import grpc
-import generated.ttn.lorawan.v3.application_services_pb2 as application_services_pb2
 import generated.ttn.lorawan.v3.application_services_pb2_grpc as application_services_pb2_grpc
 import generated.ttn.lorawan.v3.application_pb2 as application_pb2
-import generated.ttn.lorawan.v3.application_pb2_grpc as application_pb2_grpc
 import generated.ttn.lorawan.v3.identifiers_pb2 as identifiers_pb2
 
+import generated.ttn.lorawan.v3.user_services_pb2_grpc as user_services_pb2_grpc
+import generated.ttn.lorawan.v3.user_pb2 as user_pb2
+
 load_dotenv()
+
+bearer_token = os.getenv('BEARER_TOKEN')
+metadata = [('authorization', f'Bearer {bearer_token}')]
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -38,14 +42,15 @@ def user():
         post_data = request.get_json()
         name = post_data.get('name')
         email = post_data.get('email')
-        cur.execute('INSERT INTO users (name, email)'
-                    'VALUES (%s, %s)',
-                    (name, email))
-        conn.commit()
-        cur.close()
-        conn.close()
+        user_id = post_data.get('user_id')
+        password = post_data.get('password')
+        with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
+            stub = user_services_pb2_grpc.UserRegistryStub(channel)
+            user = user_pb2.User(ids=identifiers_pb2.UserIdentifiers(user_id=user_id, email=email), name=name, primary_email_address=email, password=password)
+            response = stub.Create(user_pb2.CreateUserRequest(user=user) , metadata=metadata)
+        response_object['user'] = response.ids.user_id
         response_object['message'] = 'User added!'
-    else:
+    elif request.method == 'GET':
         # GET request (currently returns all users)
         cur.execute('SELECT * FROM users;')
         users = cur.fetchall()
@@ -79,9 +84,6 @@ def applications():
         #     certificate_chain = cert,
         #     private_key = key
         # )
-
-        bearer_token = os.getenv('BEARER_TOKEN')
-        metadata = [('authorization', f'Bearer {bearer_token}')]
         
         collaborator = identifiers_pb2.OrganizationOrUserIdentifiers(user_ids = identifiers_pb2.UserIdentifiers(user_id='nikhil'))
         with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
