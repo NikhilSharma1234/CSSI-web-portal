@@ -10,6 +10,7 @@ import generated.ttn.lorawan.v3.identifiers_pb2 as identifiers_pb2
 
 import generated.ttn.lorawan.v3.user_services_pb2_grpc as user_services_pb2_grpc
 import generated.ttn.lorawan.v3.user_pb2 as user_pb2
+import google.protobuf.field_mask_pb2 as field_mask_pb2
 
 load_dotenv()
 
@@ -35,8 +36,6 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 # user route
 @app.route('/user', methods=['GET', 'POST'])
 def user():
-    conn = get_db_connection()
-    cur = conn.cursor()
     response_object = {'status': 'success'}
     if request.method == 'POST':
         post_data = request.get_json()
@@ -51,13 +50,14 @@ def user():
         response_object['user'] = response.ids.user_id
         response_object['message'] = 'User added!'
     elif request.method == 'GET':
-        # GET request (currently returns all users)
-        cur.execute('SELECT * FROM users;')
-        users = cur.fetchall()
-        cur.close()
-        conn.close()
-        response_object['users'] = users
-        response_object['message'] = 'Users returned!'
+        user_id = request.args.get('user_id')
+        with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
+           stub = user_services_pb2_grpc.UserRegistryStub(channel)
+           response = stub.Get(user_pb2.GetUserRequest(user_ids=identifiers_pb2.UserIdentifiers(user_id=user_id), field_mask=field_mask_pb2.FieldMask(paths=['name', 'primary_email_address'])), metadata=metadata)
+        response_object['user'] = {
+            'name': response.name,
+            'email': response.primary_email_address
+        }
     return jsonify(response_object)
 
 # health route
