@@ -141,7 +141,21 @@ def application():
             response_object['application'] = response.ids.application_id
             return jsonify(response_object)
         elif request.method == 'GET':
-            return "ECHO: GET\n"
+            app_id = request.args.get('app_id')
+            with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
+                stub = application_services_pb2_grpc.ApplicationRegistryStub(channel)
+                response = stub.Get(
+                    application_pb2.GetApplicationRequest(
+                        application_ids=identifiers_pb2.ApplicationIdentifiers(application_id=app_id),
+                        field_mask=field_mask_pb2.FieldMask(paths=['name', 'description'])
+                    ),
+                    metadata=metadata
+                )
+            response_object['application'] = {
+                'name': response.name,
+                'description': response.description
+            }
+            return jsonify(response_object)
         elif request.method == 'PUT':
             return "ECHO: PUT\n"
     except:
