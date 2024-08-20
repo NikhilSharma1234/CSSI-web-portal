@@ -25,6 +25,20 @@ export async function GetUser(user_id: string) {
     })
 }
 
+export async function UpdateUser(user_id: string, name: string, email: string) {
+    const path = (import.meta.env.VITE_DB_URL + '/user')
+    const payload = {
+        'user_id': user_id,
+        'name': name,
+        'email': email
+    }
+    axios.put(path, payload).then((response) => {
+        console.log(response)
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
 export async function checkServerHealth(): Promise<boolean> {
     const path = (import.meta.env.VITE_DB_URL + '/health')
     var serverDown = false
