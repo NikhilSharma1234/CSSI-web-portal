@@ -103,25 +103,27 @@ def health():
 # applciations route
 @app.route('/applications', methods=['GET'])
 def applications():
+    try:
         response_object = {'status': 'success'}
-
-        # with open('cert.crt', 'rb') as c:
-        #     cert = c.read()
-        # with open('cert.key', 'rb') as k:
-        #     key = k.read()
-
-        # credentials = grpc.ssl_channel_credentials(
-        #     certificate_chain = cert,
-        #     private_key = key
-        # )
-        
-        collaborator = identifiers_pb2.OrganizationOrUserIdentifiers(user_ids = identifiers_pb2.UserIdentifiers(user_id='nikhil'))
-        with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
-            stub = application_services_pb2_grpc.ApplicationRegistryStub(channel)
-            response = stub.List(application_pb2.ListApplicationsRequest(collaborator = collaborator) , metadata=metadata)
-        # print(response.applications[0].ids.application_id)
-        response_object['applications'] = response.applications[0].ids.application_id
+        if request.method == 'GET':
+            user_id = request.args.get('user_id')
+            collaborator = identifiers_pb2.OrganizationOrUserIdentifiers(user_ids = identifiers_pb2.UserIdentifiers(user_id=user_id))
+            with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
+                stub = application_services_pb2_grpc.ApplicationRegistryStub(channel)
+                response = stub.List(application_pb2.ListApplicationsRequest(collaborator = collaborator, field_mask=field_mask_pb2.FieldMask(paths=['name', 'description'])), metadata=metadata)
+            response_object['applications'] = []
+            for application in response.applications:
+                response_object['applications'].append({
+                    'id': application.ids.application_id,
+                    'name': application.name,
+                    'description': application.description
+                })
+                
+            return jsonify(response_object)
+    except:
+        response_object = {'status': 'failure'}
         return jsonify(response_object)
+        
 
 # applciations route
 @app.route('/application', methods=['GET', 'POST', 'PUT'])

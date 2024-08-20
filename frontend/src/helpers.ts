@@ -77,10 +77,10 @@ export async function GetApplication(app_id: string) {
     })
 }
 
-export async function getAllApplications(): Promise<any> {
-    const path = (import.meta.env.VITE_DB_URL + '/applications')
+export async function ListApplications(user_id: string): Promise<any> {
+    const path = (import.meta.env.VITE_DB_URL + '/applications?user_id=' + user_id)
     axios.get(path).then((response) => {
-        return response.data["applications"]
+        console.log(response)
     }).catch((e) => {
         console.log(e)
     })
