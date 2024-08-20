@@ -86,7 +86,7 @@ def user():
         return jsonify(response_object)
     except:
         response_object = {'status': 'failure'}
-        return jsonify(response)
+        return jsonify(response_object)
 
     
 
@@ -121,6 +121,31 @@ def applications():
             response = stub.List(application_pb2.ListApplicationsRequest(collaborator = collaborator) , metadata=metadata)
         # print(response.applications[0].ids.application_id)
         response_object['applications'] = response.applications[0].ids.application_id
+        return jsonify(response_object)
+
+# applciations route
+@app.route('/application', methods=['GET', 'POST', 'PUT'])
+def application():
+    try:
+        response_object = {'status': 'success'}
+        if request.method == 'POST':
+            post_data = request.get_json()
+            app_id = post_data.get('app_id')
+            name = post_data.get('name')
+            description = post_data.get('description')
+            user_id = post_data.get('user_id')
+            with grpc.insecure_channel("tts.rd.unr.edu:1884") as channel:
+                stub = application_services_pb2_grpc.ApplicationRegistryStub(channel)
+                application = application_pb2.Application(ids=identifiers_pb2.ApplicationIdentifiers(application_id=app_id), name=name, description=description)
+                response = stub.Create(application_pb2.CreateApplicationRequest(application=application, collaborator=identifiers_pb2.OrganizationOrUserIdentifiers(user_ids=identifiers_pb2.UserIdentifiers(user_id=user_id))), metadata=metadata)
+            response_object['application'] = response.ids.application_id
+            return jsonify(response_object)
+        elif request.method == 'GET':
+            return "ECHO: GET\n"
+        elif request.method == 'PUT':
+            return "ECHO: PUT\n"
+    except:
+        response_object = {'status': 'failure'}
         return jsonify(response_object)
 
 

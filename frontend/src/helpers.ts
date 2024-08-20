@@ -52,6 +52,22 @@ export async function checkServerHealth(): Promise<boolean> {
     return serverDown
 }
 
+export async function CreateApplication(user_id: string, app_id: string, app_name: string, description: string): Promise<any> {
+    const path = (import.meta.env.VITE_DB_URL + '/application')
+    const payload = {
+        'user_id': user_id,
+        'name': app_name,
+        'app_id': app_id,
+        'description': description
+    }
+    axios.post(path, payload).then((response) => {
+        console.log(response)
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+
 export async function getAllApplications(): Promise<any> {
     const path = (import.meta.env.VITE_DB_URL + '/applications')
     axios.get(path).then((response) => {
