@@ -5,7 +5,7 @@ import { ref, onMounted, watch } from 'vue';
 import Button from 'primevue/button';
 import Sidebar from 'primevue/sidebar';
 import store from '../store';
-import { getAllApplications } from '@/helpers';
+import { ListApplications } from '@/helpers';
 
 const PrimeVue = usePrimeVue();
 const themeStore = useThemeStore();
@@ -111,7 +111,7 @@ const logout = async () => {
 
 onMounted(async () => {
   checked.value = themeStore.currentTheme === themes.value[0];
-  applicationsFromAPI = await getAllApplications()
+  applicationsFromAPI = await ListApplications('')
 });
 
 watch(() => themeStore.currentTheme, (newTheme) => {
