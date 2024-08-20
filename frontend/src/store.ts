@@ -20,13 +20,13 @@ const store = createStore({
     }
   },
   actions: {
-    async register(context, { email, password, name }) {
+    async register(context, { email, password, name, userId }) {
       console.log(name)
       const response = await createUserWithEmailAndPassword(auth, email, password)
       if (response) {
         context.commit('SET_USER', response.user)
         await updateProfile(response.user, { displayName: name });
-        await registerUserInDb(response.user);
+        await registerUserInDb(response.user, password, userId);
       } else {
         throw new Error('Unable to register user')
       }

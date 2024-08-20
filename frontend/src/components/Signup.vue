@@ -8,8 +8,9 @@ import * as yup from 'yup';
 // Define the validation schema
 const schema = yup.object({
   email: yup.string().required().email().label('Email address'),
-  fullName: yup.string().required().max(40, 'Full name must be at most 40 characters long').label('Full Name').matches(/^(?=.*[a-zA-Z])[a-zA-Z-' ]{1,40}$/, {message: 'Full name must contain at least one letter and can only contain letters, spaces, hyphens, or apostrophes'}),
+  fullName: yup.string().required().max(40, 'Full name must be at most 40 characters long').label('Full Name').matches(/^(?=.*[a-zA-Z])[a-zA-Z-' ]{1,40}$/, { message: 'Full name must contain at least one letter and can only contain letters, spaces, hyphens, or apostrophes' }),
   password: yup.string().required().min(6).matches(/^\S*$/, 'Password must not contain spaces').max(25).label('Password'),
+  userId: yup.string().required().min(3).matches(/^[a-zA-Z]+$/, { message: 'User Id can only contain letters.'})
 });
 
 // Setup the form with VeeValidate
@@ -18,7 +19,8 @@ const { defineField, validate, handleSubmit, errors } = useForm({
 });
 const [fullName] = defineField('fullName');
 const [email] = defineField('email');
-const [password]  = defineField('password');
+const [userId] = defineField('userId');
+const [password] = defineField('password');
 
 // Firebase and Vuex setup
 const store = useStore();
@@ -32,7 +34,8 @@ const register = async () => {
     await store.dispatch('register', {
       email: email.value,
       password: password.value,
-      name: fullName.value
+      name: fullName.value,
+      userId: userId.value
     });
     router.push('/');
   } catch (err: any) {
@@ -55,86 +58,98 @@ const signInWithGoogle = async () => {
 const onSubmit = handleSubmit(async () => {
   await validate();
   if (!Object.keys(errors.value).length) {
-  loading.value = true;
-  setTimeout(() => {
-        loading.value = false;
-        register();
+    loading.value = true;
+    setTimeout(() => {
+      loading.value = false;
+      register();
     }, 2000);
-    
-  
-}
+
+
+  }
 
 });
 </script>
 <template>
-<div class="center-content">
-<div class="surface-card p-8 shadow-1 border-round w-full lg:w-4">
-    <div class="text-center mb-6">
+  <div class="center-content">
+    <div class="surface-card p-8 shadow-1 border-round w-full lg:w-4">
+      <div class="text-center mb-6">
         <img src="../assets/unr2.png" alt="Image" height="50" class="mb-3" />
         <div class="text-900 text-3xl font-medium mb-3">Create your account</div>
         <span class="text-600 font-medium line-height-4">Already have an account?</span>
-        <RouterLink to="/login" class="no-underline " ><a class="font-semibold no-underline ml-2 text-blue-400 cursor-pointer p-ripple" v-ripple>Login</a></RouterLink>
+        <RouterLink to="/login" class="no-underline "><a
+            class="font-semibold no-underline ml-2 text-blue-400 cursor-pointer p-ripple" v-ripple>Login</a></RouterLink>
         <div class="text-600 font-medium mb-3 mt-3">Or</div>
         <Button @click="signInWithGoogle()" label="Sign up with Google" severity="secondary" raised>
-    <img src="../assets/google.png" alt="Google Logo" style="width: 24px; height: 24px; margin-right: 8px;" />
-    Sign in with Google
-  </Button>
-    </div>
+          <img src="../assets/google.png" alt="Google Logo" style="width: 24px; height: 24px; margin-right: 8px;" />
+          Sign in with Google
+        </Button>
+      </div>
 
-    
-    <form @submit.prevent="onSubmit">
+
+      <form @submit.prevent="onSubmit">
         <div class="field ">
-        <label class="text-900 font-medium mb-2">Email</label>
-        <IconField iconPosition="left">
+          <label class="text-900 font-medium mb-2">User Id</label>
+          <IconField iconPosition="left">
             <InputIcon class="pi pi-envelope"></InputIcon>
-            <InputText class="w-full weight" type="email" v-model="email" :class="{ 'p-invalid': errors.email}" placeholder="Enter Your Email" />
-        </IconField>
-        <small id="email-help" class="p-error">{{ errors.email }}</small>
+            <InputText class="w-full weight" type="text" v-model="userId" :class="{ 'p-invalid': errors.userId }"
+              placeholder="Enter a unique User Id" />
+          </IconField>
+          <small id="email-help" class="p-error">{{ errors.userId }}</small>
+        </div>
+
+        <div class="field ">
+          <label class="text-900 font-medium mb-2">Email</label>
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-envelope"></InputIcon>
+            <InputText class="w-full weight" type="email" v-model="email" :class="{ 'p-invalid': errors.email }"
+              placeholder="Enter Your Email" />
+          </IconField>
+          <small id="email-help" class="p-error">{{ errors.email }}</small>
         </div>
 
         <div class="field">
-        <label class="text-900 font-medium mb-2">Full Name</label>
-        <IconField iconPosition="left" class="">
+          <label class="text-900 font-medium mb-2">Full Name</label>
+          <IconField iconPosition="left" class="">
             <InputIcon class="pi pi-user"></InputIcon>
-            <InputText  class="w-full weight" type="text" v-model="fullName" :class="{ 'p-invalid': errors.fullName}" placeholder="Enter Your Full Name" />
-        </IconField>
-        <small id="fullName-help" class="p-error">{{ errors.fullName }}</small>
+            <InputText class="w-full weight" type="text" v-model="fullName" :class="{ 'p-invalid': errors.fullName }"
+              placeholder="Enter Your Full Name" />
+          </IconField>
+          <small id="fullName-help" class="p-error">{{ errors.fullName }}</small>
         </div>
 
         <div class="field">
-        <label class="text-900 font-medium mb-2">Password</label>
-        <IconField iconPosition="left">
+          <label class="text-900 font-medium mb-2">Password</label>
+          <IconField iconPosition="left">
             <InputIcon class="pi pi-key"></InputIcon>
-            <InputText class="w-full weight" v-model="password" :class="{ 'p-invalid': errors.password}" type="password" placeholder="Enter Your Password" />
-        </IconField>
-        <small  id="fullName-help" class="p-error ">{{ errors.password }}</small>
+            <InputText class="w-full weight" v-model="password" :class="{ 'p-invalid': errors.password }" type="password"
+              placeholder="Enter Your Password" />
+          </IconField>
+          <small id="fullName-help" class="p-error ">{{ errors.password }}</small>
         </div>
 
 
-        <Button  :loading="loading" label="Sign up" icon="pi pi-user" class=" mt-3 height" type="submit"></Button>
+        <Button :loading="loading" label="Sign up" icon="pi pi-user" class=" mt-3 height" type="submit"></Button>
 
-    </form>
-</div>
-</div>
+      </form>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .center-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 80vh;
-  }
-
-
-.height{
-    height: 5vh;
-    font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
 }
 
-.weight{
-    height: 4vh;
-    font-size: 14px;
+
+.height {
+  height: 5vh;
+  font-size: 18px;
 }
 
-</style>
+.weight {
+  height: 4vh;
+  font-size: 14px;
+}</style>
