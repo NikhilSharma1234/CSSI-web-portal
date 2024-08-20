@@ -85,3 +85,12 @@ export async function ListApplications(user_id: string): Promise<any> {
         console.log(e)
     })
 }
+
+export async function GetData(user_id: string): Promise<any> {
+    const path = (import.meta.env.VITE_DB_URL + '/data')
+    axios.get(path).then((response) => {
+        console.log(response)
+    }).catch((e) => {
+        console.log(e)
+    })
+}
