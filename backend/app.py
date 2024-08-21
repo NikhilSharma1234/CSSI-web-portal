@@ -24,6 +24,7 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 import user
 import application
 import applications
+import data
 
 # health route
 @app.route('/health', methods=['GET'])
