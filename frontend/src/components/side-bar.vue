@@ -111,7 +111,8 @@ const logout = async () => {
 
 onMounted(async () => {
   checked.value = themeStore.currentTheme === themes.value[0];
-  applicationsFromAPI = await ListApplications('')
+  applicationsFromAPI = await ListApplications('admin')
+
 });
 
 watch(() => themeStore.currentTheme, (newTheme) => {
@@ -272,6 +273,7 @@ watch(() => themeStore.currentTheme, (newTheme) => {
                     class="flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors p-ripple">
                     <i class="pi pi-question-circle mr-2"></i>
                     <span class="font-medium">Help</span>
+                    <p></p>
                   </a>
                 </li>
               </ul>
