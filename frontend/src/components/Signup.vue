@@ -4,6 +4,8 @@ import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { useForm } from 'vee-validate';
 import * as yup from 'yup';
+import axios from 'axios';
+import { registerUserInDb } from '@/helpers';
 
 // Define the validation schema
 const schema = yup.object({
@@ -92,7 +94,7 @@ const onSubmit = handleSubmit(async () => {
           <IconField iconPosition="left">
             <InputIcon class="pi pi-envelope"></InputIcon>
             <InputText class="w-full weight" type="text" v-model="userId" :class="{ 'p-invalid': errors.userId }"
-              placeholder="Enter a unique User Id" />
+              placeholder="Enter unique User-ID" />
           </IconField>
           <small id="email-help" class="p-error">{{ errors.userId }}</small>
         </div>

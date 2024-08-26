@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import OrgDashMember from '../components/OrgDashMember.vue'
+import OrgDash from '../components/OrgDash.vue'
 </script>
 
 <template>
   <main>
-    <OrgDashMember/>
+    <OrgDash/>
   </main>
 </template>

@@ -6,10 +6,12 @@ import SignupView from '@/views/SignupView.vue'
 import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
 import JoinOrgView from '@/views/JoinOrgView.vue'
 import OrgDashView from '@/views/OrgDashView.vue'
-import SensorView from '@/views/SensorView.vue'
 import AddSensorView from '@/views/AddSensorView.vue'
 import CreateAppView from '@/views/CreateAppView.vue'
 import SensorDetailsView from '@/views/SensorDetailsView.vue'
+import OrganizationView from '@/views/OrganizationView.vue'
+import ApplicationView from '@/views/ApplicationView.vue'
+import AppDashView from '@/views/AppDashView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,11 +57,6 @@ const router = createRouter({
       component: OrgDashView
     },
     {
-      path: '/sensor',
-      name: 'Application Sensor Dashboard',
-      component: SensorView
-    },
-    {
       path: '/addsensor',
       name: 'Add Sensor',
       component: AddSensorView
@@ -69,6 +66,22 @@ const router = createRouter({
       name: 'Sensor Details',
       component: SensorDetailsView
     },
+    {
+      path: '/organization',
+      name: 'Organization',
+      component: OrganizationView
+    },
+    {
+      path: '/application',
+      name: 'Application',
+      component: ApplicationView
+    },
+    {
+      path: '/appdash',
+      name: 'Application Dashboard',
+      component: AppDashView
+    },
+
 
 
   ]

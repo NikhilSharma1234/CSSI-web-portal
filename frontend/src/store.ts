@@ -21,14 +21,18 @@ const store = createStore({
   },
   actions: {
     async register(context, { email, password, name, userId }) {
-      console.log(name)
-      const response = await createUserWithEmailAndPassword(auth, email, password)
-      if (response) {
-        context.commit('SET_USER', response.user)
-        await updateProfile(response.user, { displayName: name });
-        await registerUserInDb(response.user, password, userId);
-      } else {
-        throw new Error('Unable to register user')
+      try {
+        const response = await createUserWithEmailAndPassword(auth, email, password);
+        if (response) {
+          context.commit('SET_USER', response.user);
+          await updateProfile(response.user, { displayName: name });
+          await registerUserInDb(response.user, password, userId);
+        } else {
+          throw new Error('Unable to register user');
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        throw error;
       }
     },
 
@@ -119,6 +123,107 @@ export const OrganizationList = {
       return Promise.resolve(this.getData().slice(0, 10));
   }
 };
+
+export const OrganizationNames = {
+  getData() {
+      return [
+          {
+              ID: 'kaden-1',
+              name: 'UNR Organization',
+              description: 'The official organization of UNR.',
+              collaborators: 8
+          },
+          {
+              ID: 'michael-organization',
+              name: 'Computer Science Organization',
+              description: 'An organization for computer science enthusiasts.',
+              collaborators: 12
+          },
+          {
+              ID: 'organization-1',
+              name: 'Engineering Group',
+              description: 'A collaborative group for engineering projects.',
+              collaborators: 10
+          },
+          {
+              ID: 'kaden-2',
+              name: 'Art Society',
+              description: 'A society dedicated to the promotion of the arts.',
+              collaborators: 5
+          },
+          {
+              ID: 'michael-2',
+              name: 'Science Club',
+              description: 'A club for students interested in scientific research.',
+              collaborators: 14
+          },
+          {
+              ID: 'organization-2',
+              name: 'Literature Circle',
+              description: 'A circle for the discussion and appreciation of literature.',
+              collaborators: 7
+          },
+          {
+              ID: 'steward-group',
+              name: 'Music Ensemble',
+              description: 'A group for students interested in performing music.',
+              collaborators: 11
+          }
+      ];
+  },
+
+  getOrganizationNamesSmall() {
+      return Promise.resolve(this.getData().slice(0, 10));
+  }
+};
+
+export const ApplicationNames = {
+  getData() {
+      return [
+          {
+              ID: 'sensor-hub-1',
+              name: 'Temperature Monitoring System',
+              'devices': 18
+          },
+          {
+              ID: 'env-group-2',
+              name: 'Environmental Sensors Network',
+              'devices': 12
+          },
+          {
+              ID: 'agriculture-3',
+              name: 'Smart Agriculture Setup',
+              'devices': 20
+          },
+          {
+              ID: 'building-control-4',
+              name: 'Building Automation Sensors',
+              'devices': 7
+          },
+          {
+              ID: 'health-monitor-5',
+              name: 'Health Monitoring Devices',
+              'devices': 15
+          },
+          {
+              ID: 'weather-station-6',
+              name: 'Weather Station System',
+              'devices': 10
+          },
+          {
+              ID: 'water-quality-7',
+              name: 'Water Quality Monitoring',
+              'devices': 14
+          }
+      ];
+  },
+
+  getApplicationNamesSmall() {
+      return Promise.resolve(this.getData().slice(0, 10));
+  }
+};
+
+
 
 
 export const SensorList = {

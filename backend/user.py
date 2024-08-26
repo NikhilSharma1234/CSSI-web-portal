@@ -10,7 +10,6 @@ import generated.ttn.lorawan.v3.user_pb2 as user_pb2
 import google.protobuf.field_mask_pb2 as field_mask_pb2
 
 load_dotenv()
-
 bearer_token = os.getenv('BEARER_TOKEN')
 metadata = [('authorization', f'Bearer {bearer_token}')]
 
