@@ -6,15 +6,16 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
+import axios from 'axios';
+import { CreateApplication } from '@/helpers';
 
 const router = useRouter()
 const loading = ref(false)
-const ownerSelection = ref(['Kaden (Me)', 'Test-Org (Organization)', 'Test-Org-2 (Organization)']);
 
 const schema = yup.object({
-    owner: yup.string().max(36).required('Owner is required').label('Owner'),
-    appId: yup.string().required('Application ID is required').label('Application ID').matches(/^[a-z0-9-]{1,36}$/, { message: 'ID must contain no spaces and only lowercase letters, numbers, or dashes (-)' }),
-    appName: yup.string().max(50).required('Application Name is required').label('Application Name'),
+    user_id: yup.string().max(36).required('user_id is required').label('user_id'),
+    app_id: yup.string().required('Application ID is required').label('Application ID').matches(/^[a-z0-9-]{1,36}$/, { message: 'ID must contain no spaces and only lowercase letters, numbers, or dashes (-)' }),
+    app_name: yup.string().max(50).required('Application Name is required').label('Application Name'),
     description: yup.string().max(2000).label('Application Description')
 });
 
@@ -23,9 +24,9 @@ const { errors, validate, defineField } = useForm({
 });
 
 
-const [owner] = defineField('owner')
-const [appId] = defineField('appId')
-const [appName] = defineField('appName')
+const [user_id] = defineField('user_id')
+const [app_id] = defineField('app_id')
+const [app_name] = defineField('app_name')
 const [description] = defineField('description')
 
 
@@ -38,18 +39,26 @@ const validateForm = async () => {
     setTimeout(() => {
         loading.value = false;
         createApplication();
-    }, 2000);
+    }, 1000);
 };
 
 
 const createApplication = async () => {
-    console.log('Form submitted with:', {
-        id: owner.value,
-        appId: appId.value,
-        appName: appName.value,
-        description: description.value,
-    });
-}
+    try {
+        const response = await CreateApplication(
+            user_id.value,
+            app_id.value,
+            app_name.value,
+            description.value
+        );
+
+        console.log('Application created successfully:', response.data);
+        router.push('/');  // Redirect to a success page or wherever you want
+
+    } finally {
+        loading.value = false;
+    }
+};
 
 </script>
 
@@ -76,27 +85,27 @@ const createApplication = async () => {
                         </div>
                         <div class="field p-fluid ">
                             <label class="text-900 font-medium mb-2">
-                                Owner ID<span class="required-asterisk">*</span>
+                                user_id ID<span class="required-asterisk">*</span>
                             </label>
-                            <Dropdown id="input" v-model="owner" :options="ownerSelection" :class="{ 'p-invalid': errors.owner }"
-                                placeholder="Select Owner" />
-                            <small id="id-help" class="p-error">{{ errors.owner }}</small>
+                            <InputText id="input" v-model="user_id" type="text" :class="{ 'p-invalid': errors.app_id }"
+                            placeholder="Enter User/Organization-ID" />
+                            <small id="id-help" class="p-error">{{ errors.user_id }}</small>
                         </div>
                         <div class="field p-fluid mt-3">
                             <label class="text-900 font-medium mb-2">
                                 Application-ID <span class="required-asterisk">*</span>
                             </label>
-                            <InputText id="input" v-model="appId" type="text" :class="{ 'p-invalid': errors.appId }"
+                            <InputText id="input" v-model="app_id" type="text" :class="{ 'p-invalid': errors.app_id }"
                                 placeholder="Enter Application-ID" />
-                            <small id="id-help" class="p-error">{{ errors.appId }}</small>
+                            <small id="id-help" class="p-error">{{ errors.app_id }}</small>
                         </div>
                         <div class="field p-fluid mt-3">
                             <label class="text-900 font-medium mb-2">
                                 Application Name
                             </label>
-                            <InputText id="input" v-model="appName" type="text" :class="{ 'p-invalid': errors.appName }"
+                            <InputText id="input" v-model="app_name" type="text" :class="{ 'p-invalid': errors.app_name }"
                                 placeholder="Enter Application Name" />
-                            <small id="id-help" class="p-error">{{ errors.appName }}</small>
+                            <small id="id-help" class="p-error">{{ errors.app_name }}</small>
                         </div>
                         <div class="field p-fluid mt-3">
                             <label class="text-900 font-medium mb-2">

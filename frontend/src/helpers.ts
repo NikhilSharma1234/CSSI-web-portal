@@ -56,8 +56,8 @@ export async function CreateApplication(user_id: string, app_id: string, app_nam
     const path = (import.meta.env.VITE_DB_URL + '/application')
     const payload = {
         'user_id': user_id,
-        'name': app_name,
         'app_id': app_id,
+        'name': app_name,
         'description': description
     }
     axios.post(path, payload).then((response) => {
@@ -66,7 +66,6 @@ export async function CreateApplication(user_id: string, app_id: string, app_nam
         console.log(e)
     })
 }
-
 
 export async function GetApplication(app_id: string) {
     const path = (import.meta.env.VITE_DB_URL + '/application?app_id=' + app_id)
@@ -79,6 +78,39 @@ export async function GetApplication(app_id: string) {
 
 export async function ListApplications(user_id: string): Promise<any> {
     const path = (import.meta.env.VITE_DB_URL + '/applications?user_id=' + user_id)
+    axios.get(path).then((response) => {
+        console.log(response)
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+export async function CreateOrganization(user_id: string, organization_id: string, app_name: string, description: string): Promise<any> {
+    const path = (import.meta.env.VITE_DB_URL + '/organization')
+    const payload = {
+        'user_id': user_id,
+        'organization_id': organization_id,
+        'name': app_name,
+        'description': description
+    }
+    axios.post(path, payload).then((response) => {
+        console.log(response)
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+export async function GetOrganization(organization_id: string) {
+    const path = (import.meta.env.VITE_DB_URL + '/organization?organization_id=' + organization_id)
+    axios.get(path).then((response) => {
+        console.log(response)
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+export async function ListOrganizations(user_id: string): Promise<any> {
+    const path = (import.meta.env.VITE_DB_URL + '/organizations?user_id=' + user_id)
     axios.get(path).then((response) => {
         console.log(response)
     }).catch((e) => {

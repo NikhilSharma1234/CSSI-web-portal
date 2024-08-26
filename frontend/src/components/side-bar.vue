@@ -14,6 +14,7 @@ const visible = ref(false);
 const checked = ref(false);
 let applicationsFromAPI = ref();
 
+
 const organizations = ref([
   {
     name: 'Tech Solutions Inc.',
