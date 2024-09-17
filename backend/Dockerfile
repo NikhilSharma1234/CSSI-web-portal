@@ -16,8 +16,8 @@ RUN source venv/bin/activate && pip3 install -r requirements.txt
 
 
 
-ENV CSSI_DATABASE_USERNAME=exampleuser
-ENV CSSI_DATABASE_PASSWORD=examplepassword
+#ENV CSSI_DATABASE_USERNAME=exampleuser
+#ENV CSSI_DATABASE_PASSWORD=examplepassword
 
-CMD ["venv/bin/python3", "app.py"]
+ENTRYPOINT ["venv/bin/python3", "-m", "flask", "run"]
 

@@ -1,4 +1,3 @@
-from __main__ import app
 from datetime import datetime
 from flask import jsonify, request
 import os
@@ -12,7 +11,11 @@ import generated.ttn.lorawan.v3.user_services_pb2_grpc as user_services_pb2_grpc
 import generated.ttn.lorawan.v3.user_pb2 as user_pb2
 import google.protobuf.field_mask_pb2 as field_mask_pb2
 
+from flask import Blueprint
+
 load_dotenv()
+
+data_endpoint = Blueprint('data', __name__)
 
 bearer_token = os.getenv('BEARER_TOKEN')
 metadata = [('authorization', f'Bearer {bearer_token}')]
@@ -30,7 +33,7 @@ table = Table(
 )
 
 # data route
-@app.route('/data', methods=['GET'])
+@data_endpoint.route('/data', methods=['GET'])
 def data():
     try:
         response_object = {'status': 'success'}
