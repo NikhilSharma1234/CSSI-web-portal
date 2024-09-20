@@ -1,8 +1,20 @@
-from __main__ import app
 from flask import jsonify, request
 import os
 from dotenv import load_dotenv
+import grpc
+import generated.ttn.lorawan.v3.application_services_pb2_grpc as application_services_pb2_grpc
+import generated.ttn.lorawan.v3.application_pb2 as application_pb2
+import generated.ttn.lorawan.v3.identifiers_pb2 as identifiers_pb2
+
+import generated.ttn.lorawan.v3.user_services_pb2_grpc as user_services_pb2_grpc
+import generated.ttn.lorawan.v3.user_pb2 as user_pb2
+import google.protobuf.field_mask_pb2 as field_mask_pb2
+
+from flask import Blueprint
+
 load_dotenv()
+
+data_endpoint = Blueprint('data', __name__)
 
 bearer_token = os.getenv('BEARER_TOKEN')
 metadata = [('authorization', f'Bearer {bearer_token}')]
@@ -20,7 +32,7 @@ table = Table(
 )
 
 # data route
-@app.route('/data', methods=['GET'])
+@data_endpoint.route('/data', methods=['GET'])
 def data():
     try:
         response_object = {'status': 'success'}
@@ -46,7 +58,7 @@ def data():
         response_object = {'status': 'failure'}
         return jsonify(response_object)
     
-@app.route('/export', methods=['POST'])
+@data_endpoint.route('/export', methods=['POST'])
 def export_data():
     try:
         response_object = {'status': 'success'}

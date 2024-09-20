@@ -1,0 +1,23 @@
+
+FROM alpine:latest
+
+RUN apk update
+RUN apk add --no-cache python3 py3-pip
+RUN apk add --no-cache build-base libpq libpq-dev
+WORKDIR /app
+COPY .env .env
+COPY requirements.txt .
+COPY *.py ./ 
+COPY generated ./generated   
+
+
+RUN python3 -m venv venv
+RUN source venv/bin/activate && pip3 install -r requirements.txt
+
+
+
+#ENV CSSI_DATABASE_USERNAME=exampleuser
+#ENV CSSI_DATABASE_PASSWORD=examplepassword
+
+ENTRYPOINT ["venv/bin/python3", "-m", "flask", "run"]
+
