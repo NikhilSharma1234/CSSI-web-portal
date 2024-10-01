@@ -93,6 +93,7 @@ def export_data():
                     'temperature': row.payload['temperature'],
                     'temp_SOIL': None,
                     'water_SOIL': None,
+                    'conduct_SOIL': None,
                     'item_number': counter,
                 })
             elif 'temp_SOIL' in row.payload:
@@ -103,6 +104,7 @@ def export_data():
                     'temperature': None,
                     'temp_SOIL': row.payload['temp_SOIL'],
                     'water_SOIL': row.payload['water_SOIL'],
+                    'conduct_SOIL': row.payload['conduct_SOIL'],
                     'item_number': counter
                 })
 
