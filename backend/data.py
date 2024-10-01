@@ -99,6 +99,33 @@ def data():
         print(f"Error occurred: {e}")
         return jsonify({'status': 'failure', 'message': str(e)}), 500
     
+
+@data_endpoint.route('/disable', methods=['POST'])
+def disable_option():
+    try:
+        data = request.get_json()
+        sensor_ids = data.get('sensor_ids', [])
+
+        if not sensor_ids:
+            return jsonify({'status': 'fail', 'message': 'Sensor IDs are required'}), 400
+
+        disable_option = {}
+
+        for device_id in sensor_ids:
+            stmt = select(table.columns.dev_eui, table.columns.payload).where(table.columns.dev_eui == device_id)
+
+            with engine.connect() as connection:
+                result = connection.execute(stmt).first()
+
+            if result:
+                disable_option[device_id] = list(result.payload.keys()) 
+
+        return jsonify({'status': 'success', 'capabilities': disable_option})
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return jsonify({'status': 'failure', 'message': str(e)}), 500
+    
 @data_endpoint.route('/export', methods=['POST'])
 def export_data():
     try:

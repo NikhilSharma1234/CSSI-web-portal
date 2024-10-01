@@ -1,4 +1,4 @@
-from __main__ import app
+#from __main__ import app
 from flask import jsonify, request
 import os
 from dotenv import load_dotenv
@@ -7,14 +7,17 @@ import generated.ttn.lorawan.v3.application_services_pb2_grpc as application_ser
 import generated.ttn.lorawan.v3.application_pb2 as application_pb2
 import generated.ttn.lorawan.v3.identifiers_pb2 as identifiers_pb2
 import google.protobuf.field_mask_pb2 as field_mask_pb2
+from flask import Blueprint
 
 load_dotenv()
+
+applications_endpoint = Blueprint('applications', __name__)
 
 bearer_token = os.getenv('BEARER_TOKEN')
 metadata = [('authorization', f'Bearer {bearer_token}')]
 
 # applciations route
-@app.route('/applications', methods=['GET'])
+@applications_endpoint.route('/applications', methods=['GET'])
 def applications():
     try:
         response_object = {'status': 'success'}
