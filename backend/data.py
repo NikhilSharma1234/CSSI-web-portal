@@ -1,4 +1,5 @@
 from __main__ import app
+from collections import defaultdict
 from flask import jsonify, request
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
@@ -82,16 +83,46 @@ def data():
         with engine.connect() as connection:
             results = connection.execute(stmt).fetchall()
         
-        response_data = [
-            {
-                'dev_eui': row.dev_eui,
-                'timestamp': row.time.isoformat(),
-                payload_type: row.payload.get(payload_type),
-                'item_number': counter
-            }
-            for counter, row in enumerate(results)
-            if payload_type in row.payload
-        ]
+        response_data = []
+
+        if predefined_period in ['1Y', '6M', 'ALL']:
+            # Initialize a dictionary to hold readings for each dev_eui and 10-day period
+            data = defaultdict(lambda: defaultdict(list))
+            interval_length = timedelta(days=10)
+
+            # Populate data
+            for row in results:
+                if payload_type in row.payload:
+                    timestamp = row.time
+                    data_point = float(row.payload[payload_type])
+                    dev_eui = row.dev_eui
+
+                    # Calculate which 10-day interval the timestamp belongs to
+                    interval_start = (timestamp - timedelta(days=timestamp.day % 10)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    data[dev_eui][interval_start].append(data_point)
+        
+            # Calculate averages for each dev_eui and each interval
+            for dev_eui, intervals in data.items():
+                for interval_start, data_points in intervals.items():
+                    average_data = sum(data_points) / len(data_points)
+                    response_data.append({
+                        'dev_eui': dev_eui,
+                        'timestamp': interval_start.isoformat(),
+                        payload_type: average_data,
+                        'item_number': len(response_data) + 1
+                    })
+        else:
+            # For other cases, process as normal
+            response_data = [
+                {
+                    'dev_eui': row.dev_eui,
+                    'timestamp': row.time.isoformat(),
+                    payload_type: row.payload.get(payload_type),
+                    'item_number': counter
+                }
+                for counter, row in enumerate(results)
+                if payload_type in row.payload
+            ]
         
         return jsonify({'status': 'success', 'data': response_data})
 
