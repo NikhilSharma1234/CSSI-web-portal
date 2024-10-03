@@ -88,7 +88,6 @@ def data():
         if predefined_period in ['1Y', '6M', 'ALL']:
             # Initialize a dictionary to hold readings for each dev_eui and 10-day period
             data = defaultdict(lambda: defaultdict(list))
-            interval_length = timedelta(days=10)
 
             # Populate data
             for row in results:
@@ -98,7 +97,7 @@ def data():
                     dev_eui = row.dev_eui
 
                     # Calculate which 10-day interval the timestamp belongs to
-                    interval_start = (timestamp - timedelta(days=timestamp.day % 10)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    interval_start = (timestamp - timedelta(days=timestamp.day % 1)).replace(hour=0, minute=0, second=0, microsecond=0)
                     data[dev_eui][interval_start].append(data_point)
         
             # Calculate averages for each dev_eui and each interval
@@ -131,7 +130,7 @@ def data():
         return jsonify({'status': 'failure', 'message': str(e)}), 500
     
 
-@data_endpoint.route('/disable', methods=['POST'])
+@data_endpoint.route('/devices', methods=['POST'])
 def disable_option():
     try:
         data = request.get_json()
@@ -140,18 +139,30 @@ def disable_option():
         if not sensor_ids:
             return jsonify({'status': 'fail', 'message': 'Sensor IDs are required'}), 400
 
-        disable_option = {}
+        capabilities = {}
 
         for device_id in sensor_ids:
-            stmt = select(table.columns.dev_eui, table.columns.payload).where(table.columns.dev_eui == device_id)
+            stmt = select(table.columns.dev_eui, table.columns.payload).where(
+                and_(
+                    table.columns.dev_eui == device_id,
+                    ~table.columns.payload.has_key('error')  # Exclude rows with an 'error' key in payload
+                )
+            )
 
             with engine.connect() as connection:
                 result = connection.execute(stmt).first()
-
             if result:
-                disable_option[device_id] = list(result.payload.keys()) 
+                payload = result.payload
+                dev_eui = result.dev_eui
 
-        return jsonify({'status': 'success', 'capabilities': disable_option})
+                # Check for 'temperature' and 'water_SOIL' in the payload
+                if 'temperature' in payload and payload['temperature']:
+                    capabilities[dev_eui] = 'Temperature'
+                
+                if 'water_SOIL' in payload and payload['water_SOIL']:
+                    capabilities[dev_eui] = 'Soil Moisture'
+
+        return jsonify({'status': 'success', 'capabilities': capabilities})
 
     except Exception as e:
         print(f"Error occurred: {e}")
