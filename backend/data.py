@@ -1,4 +1,4 @@
-from __main__ import app
+#from __main__ import app
 from collections import defaultdict
 from flask import jsonify, request
 from datetime import datetime, timedelta, timezone

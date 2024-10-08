@@ -1,4 +1,4 @@
-from __main__ import app
+#from __main__ import app
 from flask import jsonify, request
 import os
 from dotenv import load_dotenv
