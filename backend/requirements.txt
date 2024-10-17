@@ -1,4 +1,4 @@
-sqlalchemy
+SQLAlchemy
 Flask
 Flask-Cors
 Werkzeug
