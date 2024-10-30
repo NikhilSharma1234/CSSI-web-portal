@@ -26,6 +26,157 @@ table = Table(
     autoload_with=engine
 )
 
+mapping = [
+    {
+        "type": "Temperature",
+        "display_name": "Temperature",
+        "payload_value": "temperature",
+        "brand": "laird",
+        "model": "rs1xx",
+        "unit": "celsius",
+        "derivation": None,
+        "description": "Temperature from laird sensor",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Temperature",
+        "display_name": "Temperature Red",
+        "payload_value": "Temp_Red",
+        "brand": "dragino",
+        "model": "D20,22,23",
+        "unit": "celsius",
+        "derivation": None,
+        "description": "Temperature from the red probe",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Temperature",
+        "display_name": "Temperature Black",
+        "payload_value": "Temp_Black",
+        "brand": "dragino",
+        "model": "D20,22,23",
+        "unit": "celsius",
+        "derivation": None,
+        "description": "Temperature from the black probe",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Temperature",
+        "display_name": "Temperature White",
+        "payload_value": "Temp_White",
+        "brand": "dragino",
+        "model": "D20,22,23",
+        "unit": "celsius",
+        "derivation": None,
+        "description": "Temperature from the white probe",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Soil Moisture",
+        "display_name": "Soil Moisture",
+        "payload_value": "water_SOIL",
+        "brand": "dragino",
+        "model": "LSE01",
+        "unit": "percent",
+        "derivation": None,
+        "description": "Soil moisture from the sensor",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Soil Moisture",
+        "display_name": "Soil Conductivity",
+        "payload_value": "conduct_SOIL",
+        "brand": "dragino",
+        "model": "LSE01",
+        "unit": "microsiemens per centimeter",
+        "derivation": None,
+        "description": "Soil conductivity from the sensor",
+        "sortable": True,
+        "width": 120,
+    },
+    {
+        "type": "Soil Moisture",
+        "display_name": "Soil Temperature",
+        "payload_value": "temp_SOIL",
+        "brand": "dragino",
+        "model": "LSE01",
+        "unit": "celsius",
+        "derivation": None,
+        "description": "Soil temperature from the sensor",
+        "sortable": True,
+        "width": 120,
+    },
+    {
+        "type": "Soil Moisture",
+        "display_name": "Battery Life",
+        "payload_value": "Bat",
+        "brand": "dragino",
+        "model": "LSE01",
+        "unit": "float",
+        "derivation": "value*20",
+        "description": "Battery life from the sensor",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Temperature",
+        "display_name": "Battery Life",
+        "payload_value": "BatV",
+        "brand": "dragino",
+        "model": "D20,22,23",
+        "unit": "float",
+        "derivation": "value*20",
+        "description": "Battery life from the sensor",
+        "sortable": True,
+        "width": 90,
+    },
+    {
+        "type": "Temperature",
+        "display_name": "Battery Life",
+        "payload_value": "batteryCapacity",
+        "brand": "laird",
+        "model": "rs1xx",
+        "unit": "string",
+        "derivation": "int(str(value).replace('%', '').split('-')[1])",
+        "description": "Battery life from the sensor",
+        "sortable": True,
+        "width": 90,
+    }    
+]
+
+payload_to_display_name = {
+    'temperature': 'Temperature',
+    'Temp_Red': 'Temperature Red',
+    'Temp_Black': 'Temperature Black',
+    'Temp_White': 'Temperature White',
+    'water_SOIL': 'Soil Moisture',
+    'conduct_SOIL': 'Soil Conductivity',
+    'temp_SOIL': 'Soil Temperature',
+    'Bat': 'Battery Life',
+    'BatV': 'Battery Life',
+    'batteryCapacity': 'Battery Life'
+}
+
+payload_to_type = {
+    'temperature': 'Temperature',
+    'Temp_Red': 'Temperature',
+    'Temp_Black': 'Temperature',
+    'Temp_White': 'Temperature',
+    'water_SOIL': 'Soil Moisture',
+    'conduct_SOIL': 'Soil Moisture',
+    'temp_SOIL': 'Soil Moisture',
+    'Bat': 'Soil Moisture',
+    'BatV': 'Temperature',
+    'batteryCapacity': 'Temperature'
+}
+
+derivation_map = {item['payload_value']: item for item in mapping}
+
 # Used for data visualization
 @data_endpoint.route('/data', methods=['POST'])
 def data():
