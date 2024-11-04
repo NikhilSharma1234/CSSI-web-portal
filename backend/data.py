@@ -5,23 +5,12 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 import os
 from dotenv import load_dotenv
-import grpc
-import generated.ttn.lorawan.v3.application_services_pb2_grpc as application_services_pb2_grpc
-import generated.ttn.lorawan.v3.application_pb2 as application_pb2
-import generated.ttn.lorawan.v3.identifiers_pb2 as identifiers_pb2
-
-import generated.ttn.lorawan.v3.user_services_pb2_grpc as user_services_pb2_grpc
-import generated.ttn.lorawan.v3.user_pb2 as user_pb2
-import google.protobuf.field_mask_pb2 as field_mask_pb2
-
+from helper import get_sensor_mapping
 from flask import Blueprint
 
 load_dotenv()
 
 data_endpoint = Blueprint('data', __name__)
-
-bearer_token = os.getenv('BEARER_TOKEN')
-metadata = [('authorization', f'Bearer {bearer_token}')]
 
 from sqlalchemy import create_engine, select, MetaData, Table, and_
 username = os.getenv('CSSI_DATABASE_USERNAME')
@@ -35,16 +24,27 @@ table = Table(
     autoload_with=engine
 )
 
+# Used for data visualization
 @data_endpoint.route('/data', methods=['POST'])
 def data():
     try:
         data = request.get_json()
         
-        sensor_ids = data.get('sensor_ids', [])
-        payload_type = data.get('payload_type')
+        selected_sensor_data = data.get('data', [])
+        sensor_ids = list(selected_sensor_data.keys())
         predefined_period = data.get('period')
+        payload_types = set()
+
+        for payload_list in selected_sensor_data.values():
+            if not isinstance(payload_list, list) or not all(isinstance(payload, str) for payload in payload_list):
+                return jsonify({'status': 'fail', 'message': 'Payload types must be strings in a list'}), 400
+            payload_types.update(payload_list)
+
+        # Validate that we have at least one payload type
+        if not payload_types:
+            return jsonify({'status': 'fail', 'message': 'No valid payload types provided'}), 400
         
-        if not sensor_ids or not payload_type or not predefined_period:
+        if not sensor_ids or not payload_types or not predefined_period:
             return jsonify({'status': 'fail', 'message': 'Sensor IDs, payload type, and period are required'}), 400
         
         now = datetime.now(timezone.utc)
@@ -67,6 +67,10 @@ def data():
             start_time = datetime.min.replace(tzinfo=timezone.utc)
         else:
             start_time = now - period_mapping[predefined_period]
+
+        mapping = get_sensor_mapping()
+
+        derivation_map = {item['payload_value']: item for item in mapping}
         
         stmt = select(
             table.columns.dev_eui,
@@ -82,47 +86,71 @@ def data():
         
         with engine.connect() as connection:
             results = connection.execute(stmt).fetchall()
-        
+
         response_data = []
 
-        if predefined_period in ['1Y', '6M', 'ALL']:
-            # Initialize a dictionary to hold readings for each dev_eui and 10-day period
-            data = defaultdict(lambda: defaultdict(list))
+        # Process each result to apply derivations immediately
+        for row in results:
+            dev_eui = row.dev_eui
+            timestamp = row.time
+            payload = row.payload
 
-            # Populate data
-            for row in results:
-                if payload_type in row.payload:
-                    timestamp = row.time
-                    data_point = float(row.payload[payload_type])
-                    dev_eui = row.dev_eui
+            for payload_type in payload_types:
+                if payload_type in payload:
+                    data_point = payload[payload_type]
+                    
+                    # Apply derivation if it exists
+                    if payload_type in derivation_map:
+                        derivation = derivation_map[payload_type]['derivation']
+                        if derivation:
+                            # Safely evaluate the derivation expression
+                            try:
+                                locals_dict = {'value': data_point}
+                                data_point = eval(derivation, {}, locals_dict)
+                            except Exception as e:
+                                print(f"Error in derivation for {dev_eui} on {timestamp}: {e}")
 
-                    # Calculate which 10-day interval the timestamp belongs to
-                    interval_start = (timestamp - timedelta(days=timestamp.day % 1)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    data[dev_eui][interval_start].append(data_point)
-        
-            # Calculate averages for each dev_eui and each interval
-            for dev_eui, intervals in data.items():
-                for interval_start, data_points in intervals.items():
-                    average_data = sum(data_points) / len(data_points)
+                    # Store the processed data immediately
                     response_data.append({
                         'dev_eui': dev_eui,
-                        'timestamp': interval_start.isoformat(),
-                        payload_type: average_data,
+                        'timestamp': timestamp.isoformat(),
+                        'payload_type': payload_type,
+                        'value': data_point,
                         'item_number': len(response_data) + 1
                     })
-        else:
-            # For other cases, process as normal
-            response_data = [
-                {
-                    'dev_eui': row.dev_eui,
-                    'timestamp': row.time.isoformat(),
-                    payload_type: row.payload.get(payload_type),
-                    'item_number': counter
-                }
-                for counter, row in enumerate(results)
-                if payload_type in row.payload
-            ]
-        
+
+        # Now handle aggregation for specific periods
+        if predefined_period in ['1Y', '6M', 'ALL']:
+            # Initialize a dictionary to hold readings for each dev_eui and 10-day period
+            aggregated_data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+
+            # Populate aggregated data
+            for item in response_data:
+                dev_eui = item['dev_eui']
+                timestamp = item['timestamp']
+                if item['value'] == 'NULL': 
+                    continue
+                data_point = float(item['value'])
+                payload_type = item['payload_type']  # Get the payload type
+
+                # Calculate which 10-day interval the timestamp belongs to
+                interval_start = (datetime.fromisoformat(timestamp) - timedelta(days=datetime.fromisoformat(timestamp).day % 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                aggregated_data[dev_eui][payload_type][interval_start].append(data_point)
+
+            # Calculate averages for each dev_eui, payload_type, and each interval
+            response_data = []
+            for dev_eui, payload_types in aggregated_data.items():
+                for payload_type, intervals in payload_types.items():
+                    for interval_start, data_points in intervals.items():
+                        average_data = sum(data_points) / len(data_points)
+                        response_data.append({
+                            'dev_eui': dev_eui,
+                            'timestamp': interval_start.isoformat(),
+                            'payload_type': payload_type,  # Include payload_type in the response
+                            'value': average_data,
+                            'item_number': len(response_data) + 1
+                        })
+
         return jsonify({'status': 'success', 'data': response_data})
 
     except Exception as e:
@@ -130,8 +158,9 @@ def data():
         return jsonify({'status': 'failure', 'message': str(e)}), 500
     
 
+# Used to get the type of device
 @data_endpoint.route('/devices', methods=['POST'])
-def disable_option():
+def get_device_type():
     try:
         data = request.get_json()
         sensor_ids = data.get('sensor_ids', [])
@@ -140,6 +169,9 @@ def disable_option():
             return jsonify({'status': 'fail', 'message': 'Sensor IDs are required'}), 400
 
         capabilities = {}
+        mapping = get_sensor_mapping()
+        payload_to_display_name = {item["payload_value"]: item["display_name"] for item in mapping}
+        payload_to_type = {item["payload_value"]: item["type"] for item in mapping}
 
         for device_id in sensor_ids:
             stmt = select(table.columns.dev_eui, table.columns.payload).where(
@@ -154,30 +186,41 @@ def disable_option():
             if result:
                 payload = result.payload
                 dev_eui = result.dev_eui
-
-                # Check for 'temperature' and 'water_SOIL' in the payload
-                if 'temperature' in payload and payload['temperature']:
-                    capabilities[dev_eui] = 'Temperature'
-                
-                if 'water_SOIL' in payload and payload['water_SOIL']:
-                    capabilities[dev_eui] = 'Soil Moisture'
+                capabilities[dev_eui] = {}
+                for key in payload.keys():
+                    if key in payload_to_type.keys():
+                        capabilities[dev_eui]["type"] = payload_to_type[key]
+                    if key in payload_to_display_name.keys():
+                        if "readings" in capabilities[dev_eui].keys():
+                            capabilities[dev_eui]["readings"].append({
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            })
+                        else:
+                            capabilities[dev_eui]["readings"] = [{
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            }]
 
         return jsonify({'status': 'success', 'capabilities': capabilities})
 
     except Exception as e:
         print(f"Error occurred: {e}")
         return jsonify({'status': 'failure', 'message': str(e)}), 500
-    
+
+# Used for data export feature
 @data_endpoint.route('/export', methods=['POST'])
 def export_data():
     try:
         response_object = {'status': 'success'}
         data = request.get_json()
-
+        
         selected_devices = data.get('devices', [])
         start_time = data.get('startTime')
         end_time = data.get('endTime')
 
+        mapping = get_sensor_mapping()
+        
         stmt = select(
             table.columns.dev_eui,
             table.columns.time,
@@ -190,35 +233,52 @@ def export_data():
                 table.columns.time <= end_time
             )
         )
-
+        
         connection = engine.connect()
         results = connection.execute(stmt).fetchall()
         response_object['data'] = []
+        
+        # Prepare metadata mapping for response
+        mapping_info = {
+            entry['payload_value']: {
+                'display_name': entry['display_name'],
+                'unit': entry['unit'],
+                'description': entry['description'],
+                'sortable': entry['sortable'],
+                'width': entry['width']
+            }
+            for entry in mapping
+        }
+        
         for counter, row in enumerate(results):
-            if 'temperature' in row.payload:
-                response_object['data'].append({
-                    'dev_eui': row.dev_eui,
-                    'batteryCapacity': row.payload['batteryCapacity'],
-                    'timestamp': row.time,
-                    'temperature': row.payload['temperature'],
-                    'temp_SOIL': None,
-                    'water_SOIL': None,
-                    'conduct_SOIL': None,
-                    'item_number': counter,
-                })
-            elif 'temp_SOIL' in row.payload:
-                response_object['data'].append({
-                    'dev_eui': row.dev_eui,
-                    'timestamp': row.time,
-                    'batteryCapacity': row.payload['Bat'] * 20,
-                    'temperature': None,
-                    'temp_SOIL': row.payload['temp_SOIL'],
-                    'water_SOIL': row.payload['water_SOIL'],
-                    'conduct_SOIL': row.payload['conduct_SOIL'],
-                    'item_number': counter
-                })
+            data_entry = {
+                'dev_eui': row.dev_eui,
+                'timestamp': row.time,
+                'item_number': counter
+            }
+            
+            for entry in mapping:
+                payload_value = entry['payload_value']
+                
+                if payload_value in row.payload:
+                    # Apply derivation if it exists, else use the value directly
+                    value = row.payload[payload_value]
+                    if entry['derivation']:
+                        # Safely evaluate the derivation with 'value' in local context
+                        locals_dict = {'value': value}
+                        value = eval(entry['derivation'], {}, locals_dict)
+                        value = round(value, 2)
+                    
+                    # Add field to data entry using payload_value as the key
+                    data_entry[payload_value] = value
+            
+            response_object['data'].append(data_entry)
 
+        # Add the mapping info to the response
+        response_object['mapping'] = mapping_info
+        
         return jsonify(response_object)
+    
     except Exception as e:
         print(e)
         response_object = {'status': 'failure'}
