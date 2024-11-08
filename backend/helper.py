@@ -15,8 +15,10 @@ data_endpoint = Blueprint('data', __name__)
 from sqlalchemy import create_engine, select, MetaData, Table, and_
 username = os.getenv('CSSI_DATABASE_USERNAME')
 password = os.getenv('CSSI_DATABASE_PASSWORD')
+host = os.getenv('CSSI_DATABASE_HOST','tts.rd.unr.edu')
+table = os.getenv('CSSI_DATABASE_TABLE','postgres')
 
-engine = create_engine("postgresql+psycopg2://" + username + ":" + password + "@tts.rd.unr.edu/postgres")
+engine = create_engine("postgresql+psycopg2://" + username + ":" + password + f"@{host}/{table}")
 metadata = MetaData()
 table = Table(
     'sensor_mapping', 
