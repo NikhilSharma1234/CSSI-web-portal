@@ -26,157 +26,6 @@ table = Table(
     autoload_with=engine
 )
 
-mapping = [
-    {
-        "type": "Temperature",
-        "display_name": "Temperature",
-        "payload_value": "temperature",
-        "brand": "laird",
-        "model": "rs1xx",
-        "unit": "celsius",
-        "derivation": None,
-        "description": "Temperature from laird sensor",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Temperature",
-        "display_name": "Temperature Red",
-        "payload_value": "Temp_Red",
-        "brand": "dragino",
-        "model": "D20,22,23",
-        "unit": "celsius",
-        "derivation": None,
-        "description": "Temperature from the red probe",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Temperature",
-        "display_name": "Temperature Black",
-        "payload_value": "Temp_Black",
-        "brand": "dragino",
-        "model": "D20,22,23",
-        "unit": "celsius",
-        "derivation": None,
-        "description": "Temperature from the black probe",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Temperature",
-        "display_name": "Temperature White",
-        "payload_value": "Temp_White",
-        "brand": "dragino",
-        "model": "D20,22,23",
-        "unit": "celsius",
-        "derivation": None,
-        "description": "Temperature from the white probe",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Soil Moisture",
-        "display_name": "Soil Moisture",
-        "payload_value": "water_SOIL",
-        "brand": "dragino",
-        "model": "LSE01",
-        "unit": "percent",
-        "derivation": None,
-        "description": "Soil moisture from the sensor",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Soil Moisture",
-        "display_name": "Soil Conductivity",
-        "payload_value": "conduct_SOIL",
-        "brand": "dragino",
-        "model": "LSE01",
-        "unit": "microsiemens per centimeter",
-        "derivation": None,
-        "description": "Soil conductivity from the sensor",
-        "sortable": True,
-        "width": 120,
-    },
-    {
-        "type": "Soil Moisture",
-        "display_name": "Soil Temperature",
-        "payload_value": "temp_SOIL",
-        "brand": "dragino",
-        "model": "LSE01",
-        "unit": "celsius",
-        "derivation": None,
-        "description": "Soil temperature from the sensor",
-        "sortable": True,
-        "width": 120,
-    },
-    {
-        "type": "Soil Moisture",
-        "display_name": "Battery Life",
-        "payload_value": "Bat",
-        "brand": "dragino",
-        "model": "LSE01",
-        "unit": "float",
-        "derivation": "value*20",
-        "description": "Battery life from the sensor",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Temperature",
-        "display_name": "Battery Life",
-        "payload_value": "BatV",
-        "brand": "dragino",
-        "model": "D20,22,23",
-        "unit": "float",
-        "derivation": "value*20",
-        "description": "Battery life from the sensor",
-        "sortable": True,
-        "width": 90,
-    },
-    {
-        "type": "Temperature",
-        "display_name": "Battery Life",
-        "payload_value": "batteryCapacity",
-        "brand": "laird",
-        "model": "rs1xx",
-        "unit": "string",
-        "derivation": "int(str(value).replace('%', '').split('-')[1])",
-        "description": "Battery life from the sensor",
-        "sortable": True,
-        "width": 90,
-    }    
-]
-
-payload_to_display_name = {
-    'temperature': 'Temperature',
-    'Temp_Red': 'Temperature Red',
-    'Temp_Black': 'Temperature Black',
-    'Temp_White': 'Temperature White',
-    'water_SOIL': 'Soil Moisture',
-    'conduct_SOIL': 'Soil Conductivity',
-    'temp_SOIL': 'Soil Temperature',
-    'Bat': 'Battery Life',
-    'BatV': 'Battery Life',
-    'batteryCapacity': 'Battery Life'
-}
-
-payload_to_type = {
-    'temperature': 'Temperature',
-    'Temp_Red': 'Temperature',
-    'Temp_Black': 'Temperature',
-    'Temp_White': 'Temperature',
-    'water_SOIL': 'Soil Moisture',
-    'conduct_SOIL': 'Soil Moisture',
-    'temp_SOIL': 'Soil Moisture',
-    'Bat': 'Soil Moisture',
-    'BatV': 'Temperature',
-    'batteryCapacity': 'Temperature'
-}
-
-derivation_map = {item['payload_value']: item for item in mapping}
-
 # Used for data visualization
 @data_endpoint.route('/data', methods=['POST'])
 def data():
@@ -186,6 +35,7 @@ def data():
         selected_sensor_data = data.get('data', [])
         sensor_ids = list(selected_sensor_data.keys())
         predefined_period = data.get('period')
+        selected_aggregation = data.get('aggregation')
         payload_types = set()
 
         for payload_list in selected_sensor_data.values():
@@ -193,15 +43,10 @@ def data():
                 return jsonify({'status': 'fail', 'message': 'Payload types must be strings in a list'}), 400
             payload_types.update(payload_list)
 
-        # Validate that we have at least one payload type
-        if not payload_types:
-            return jsonify({'status': 'fail', 'message': 'No valid payload types provided'}), 400
-        
         if not sensor_ids or not payload_types or not predefined_period:
             return jsonify({'status': 'fail', 'message': 'Sensor IDs, payload type, and period are required'}), 400
-        
+
         now = datetime.now(timezone.utc)
-        
         period_mapping = {
             '1H': timedelta(hours=1),
             '24H': timedelta(hours=24),
@@ -210,17 +55,13 @@ def data():
             '30D': timedelta(days=30),
             '6M': timedelta(days=180),
             '1Y': timedelta(days=365),
-            'ALL': 'None'
+            'ALL': None
         }
-        
+
         if predefined_period not in period_mapping:
             return jsonify({'status': 'fail', 'message': 'Invalid period selected'}), 400
-        
-        if predefined_period == 'ALL':
-            start_time = datetime.min.replace(tzinfo=timezone.utc)
-        else:
-            start_time = now - period_mapping[predefined_period]
 
+        start_time = datetime.min.replace(tzinfo=timezone.utc) if predefined_period == 'ALL' else now - period_mapping[predefined_period]
         mapping = get_sensor_mapping()
 
         derivation_map = {item['payload_value']: item for item in mapping}
@@ -236,13 +77,11 @@ def data():
                 table.columns.time <= now
             )
         )
-        
+
         with engine.connect() as connection:
             results = connection.execute(stmt).fetchall()
 
         response_data = []
-
-        # Process each result to apply derivations immediately
         for row in results:
             dev_eui = row.dev_eui
             timestamp = row.time
@@ -266,18 +105,28 @@ def data():
                     # Store the processed data immediately
                     response_data.append({
                         'dev_eui': dev_eui,
-                        'timestamp': timestamp.isoformat(),
+                        'timestamp': timestamp,
                         'payload_type': payload_type,
                         'value': data_point,
-                        'item_number': len(response_data) + 1
                     })
 
-        # Now handle aggregation for specific periods
-        if predefined_period in ['1Y', '6M', 'ALL']:
-            # Initialize a dictionary to hold readings for each dev_eui and 10-day period
-            aggregated_data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        if selected_aggregation != 'None':
+            interval_mapping = {
+                '1 Hour': timedelta(hours=1),
+                '1 Day': timedelta(days=1),
+                '7 Days': timedelta(days=7),
+                '1 Month': timedelta(days=30),
+                '6 Months': timedelta(days=180)
+            }
 
-            # Populate aggregated data
+            if selected_aggregation not in interval_mapping:
+                return jsonify({'status': 'fail', 'message': 'Invalid aggregation option'}), 400
+
+            aggregation_interval = interval_mapping[selected_aggregation]
+            
+            # Update: Nested defaultdict to store lists for each payload_type within each (dev_eui, interval_start) key
+            aggregated_data = defaultdict(lambda: defaultdict(list))
+
             for item in response_data:
                 dev_eui = item['dev_eui']
                 timestamp = item['timestamp']
@@ -286,23 +135,30 @@ def data():
                 data_point = float(item['value'])
                 payload_type = item['payload_type']  # Get the payload type
 
-                # Calculate which 10-day interval the timestamp belongs to
-                interval_start = (datetime.fromisoformat(timestamp) - timedelta(days=datetime.fromisoformat(timestamp).day % 1)).replace(hour=0, minute=0, second=0, microsecond=0)
-                aggregated_data[dev_eui][payload_type][interval_start].append(data_point)
+                if aggregation_interval == timedelta(days=1): 
+                    interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+                elif aggregation_interval == timedelta(weeks=1): 
+                    interval_start = timestamp - timedelta(days=timestamp.weekday())
+                    interval_start = interval_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                elif aggregation_interval.days >= 30: 
+                    interval_start = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                else:
+                    seconds = int(aggregation_interval.total_seconds())
+                    rounded_seconds = (timestamp.minute * 60 + timestamp.second) % seconds
+                    interval_start = timestamp - timedelta(seconds=rounded_seconds, microseconds=timestamp.microsecond)
 
-            # Calculate averages for each dev_eui, payload_type, and each interval
-            response_data = []
-            for dev_eui, payload_types in aggregated_data.items():
-                for payload_type, intervals in payload_types.items():
-                    for interval_start, data_points in intervals.items():
-                        average_data = sum(data_points) / len(data_points)
-                        response_data.append({
-                            'dev_eui': dev_eui,
-                            'timestamp': interval_start.isoformat(),
-                            'payload_type': payload_type,  # Include payload_type in the response
-                            'value': average_data,
-                            'item_number': len(response_data) + 1
-                        })
+                aggregated_data[(dev_eui, interval_start)][payload_type].append(data_point)
+
+            response_data = [
+                {
+                    'dev_eui': dev_eui,
+                    'timestamp': interval_start.isoformat(),
+                    'payload_type': payload_type,
+                    'value': sum(values) / len(values) 
+                }
+                for (dev_eui, interval_start), payload_dict in aggregated_data.items()
+                for payload_type, values in payload_dict.items()
+            ]
 
         return jsonify({'status': 'success', 'data': response_data})
 
@@ -310,7 +166,6 @@ def data():
         print(f"Error occurred: {e}")
         return jsonify({'status': 'failure', 'message': str(e)}), 500
     
-
 # Used to get the type of device
 @data_endpoint.route('/devices', methods=['POST'])
 def get_device_type():
@@ -371,6 +226,7 @@ def export_data():
         selected_devices = data.get('devices', [])
         start_time = data.get('startTime')
         end_time = data.get('endTime')
+        
 
         mapping = get_sensor_mapping()
         
