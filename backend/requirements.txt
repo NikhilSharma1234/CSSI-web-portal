@@ -1,0 +1,15 @@
+SQLAlchemy
+Flask
+Flask-Cors
+Werkzeug
+Jinja2
+itsdangerous
+MarkupSafe
+click
+python-dotenv
+SQLAlchemy
+grpcio
+protobuf
+asyncio
+greenlet
+psycopg2-binary
