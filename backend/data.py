@@ -69,7 +69,8 @@ def data():
         stmt = select(
             table.columns.dev_eui,
             table.columns.time,
-            table.columns.payload
+            table.columns.payload,
+            table.columns.metadata
         ).where(
             and_(
                 table.columns.dev_eui.in_(sensor_ids),
@@ -86,10 +87,14 @@ def data():
             dev_eui = row.dev_eui
             timestamp = row.time
             payload = row.payload
+            metadata = row.metadata
 
             for payload_type in payload_types:
-                if payload_type in payload:
-                    data_point = payload[payload_type]
+                if payload_type in payload or payload_type in metadata:
+                    if payload_type in payload:
+                        data_point = payload[payload_type]
+                    else:
+                        data_point = metadata[payload_type]
                     
                     # Apply derivation if it exists
                     if payload_type in derivation_map:
@@ -182,7 +187,7 @@ def get_device_type():
         payload_to_type = {item["payload_value"]: item["type"] for item in mapping}
 
         for device_id in sensor_ids:
-            stmt = select(table.columns.dev_eui, table.columns.payload).where(
+            stmt = select(table.columns.dev_eui, table.columns.payload, table.columns.metadata).where(
                 and_(
                     table.columns.dev_eui == device_id,
                     ~table.columns.payload.has_key('error')  # Exclude rows with an 'error' key in payload
@@ -193,6 +198,7 @@ def get_device_type():
                 result = connection.execute(stmt).first()
             if result:
                 payload = result.payload
+                metadata = result.metadata
                 dev_eui = result.dev_eui
                 capabilities[dev_eui] = {}
                 for key in payload.keys():
@@ -209,7 +215,20 @@ def get_device_type():
                                 "payload_value": key,
                                 "display_name": payload_to_display_name[key]
                             }]
-
+                # For any information needed from the metadata
+                for key in metadata.keys():
+                    if key in payload_to_display_name.keys():
+                        if "readings" in capabilities[dev_eui].keys():
+                            capabilities[dev_eui]["readings"].append({
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            })
+                        else:
+                            capabilities[dev_eui]["readings"] = [{
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            }]
+        print(capabilities)
         return jsonify({'status': 'success', 'capabilities': capabilities})
 
     except Exception as e:
@@ -269,9 +288,13 @@ def export_data():
             for entry in mapping:
                 payload_value = entry['payload_value']
                 
-                if payload_value in row.payload:
-                    # Apply derivation if it exists, else use the value directly
-                    value = row.payload[payload_value]
+                if payload_value in row.payload or payload_value in row.metadata:
+                    # Apply derivation if it exists, else use the value directly in either payload or metadata
+                    if payload_value in row.payload:
+                        value = row.payload[payload_value]
+                    else:
+                        value = row.metadata[payload_value]
+
                     if entry['derivation']:
                         # Safely evaluate the derivation with 'value' in local context
                         locals_dict = {'value': value}
