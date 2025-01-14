@@ -2,7 +2,7 @@
 from collections import defaultdict
 from flask import jsonify, request
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import func, select
+from sqlalchemy import func, select, desc
 import os
 from dotenv import load_dotenv
 from helper import get_sensor_mapping
@@ -187,12 +187,14 @@ def get_device_type():
         payload_to_type = {item["payload_value"]: item["type"] for item in mapping}
 
         for device_id in sensor_ids:
-            stmt = select(table.columns.dev_eui, table.columns.payload, table.columns.metadata).where(
+            stmt = select(table.columns.dev_eui, table.columns.payload, table.columns.metadata, table.columns.time).where(
                 and_(
                     table.columns.dev_eui == device_id,
                     ~table.columns.payload.has_key('error')  # Exclude rows with an 'error' key in payload
                 )
-            )
+            ).order_by(
+                desc(table.columns.time)
+            ).limit(1)
 
             with engine.connect() as connection:
                 result = connection.execute(stmt).first()
@@ -200,11 +202,16 @@ def get_device_type():
                 payload = result.payload
                 metadata = result.metadata
                 dev_eui = result.dev_eui
-                capabilities[dev_eui] = {}
+                capabilities[dev_eui] = {
+                    "lastReading": {
+                        "time": result.time
+                    }
+                }
                 for key in payload.keys():
                     if key in payload_to_type.keys():
                         capabilities[dev_eui]["type"] = payload_to_type[key]
                     if key in payload_to_display_name.keys():
+                        capabilities[dev_eui]["lastReading"][payload_to_display_name[key]] = payload[key]
                         if "readings" in capabilities[dev_eui].keys():
                             capabilities[dev_eui]["readings"].append({
                                 "payload_value": key,
