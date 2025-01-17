@@ -324,7 +324,6 @@ def get_device_type():
                                 "payload_value": key,
                                 "display_name": payload_to_display_name[key]
                             }]
-        print(capabilities)
         return jsonify({'status': 'success', 'capabilities': capabilities})
 
     except Exception as e:
