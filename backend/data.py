@@ -171,7 +171,6 @@ def dataButton():
 def data():
     try:
         data = request.get_json()
-
         # Extract sensor data, sensor ids, payload types, and time range from request
         selected_sensor_data = data.get('data', {})
         sensor_ids = list(selected_sensor_data.keys())
