@@ -212,7 +212,8 @@ def data():
         stmt = select(
             table.columns.dev_eui,
             table.columns.time,
-            table.columns.payload
+            table.columns.payload,
+            table.columns.metadata
         ).where(
             and_(
                 table.columns.dev_eui.in_(sensor_ids),
@@ -231,10 +232,14 @@ def data():
             dev_eui = row.dev_eui
             timestamp = row.time
             payload = row.payload
+            metadata = row.metadata
 
             for payload_type in payload_types:
-                if payload_type in payload:
-                    data_point = payload[payload_type]
+                 if payload_type in payload or payload_type in metadata:
+                    if payload_type in payload:
+                        data_point = payload[payload_type]
+                    else:
+                        data_point = metadata[payload_type]
 
                     # Apply derivation if it exists
                     if payload_type in derivation_map:
