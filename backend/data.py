@@ -26,9 +26,9 @@ table = Table(
     autoload_with=engine
 )
 
-# Used for data visualization
-@data_endpoint.route('/data', methods=['POST'])
-def data():
+# Used for data visualization - Button Periods
+@data_endpoint.route('/dataButton', methods=['POST'])
+def dataButton():
     try:
         data = request.get_json()
         
@@ -170,7 +170,101 @@ def data():
     except Exception as e:
         print(f"Error occurred: {e}")
         return jsonify({'status': 'failure', 'message': str(e)}), 500
-    
+
+# Used for data visualization - Date Time Picker
+@data_endpoint.route('/data', methods=['POST'])
+def data():
+    try:
+        data = request.get_json()
+        # Extract sensor data, sensor ids, payload types, and time range from request
+        selected_sensor_data = data.get('data', {})
+        sensor_ids = list(selected_sensor_data.keys())
+        payload_types = set()
+
+        # Ensure payload types are valid
+        for payload_list in selected_sensor_data.values():
+            if not isinstance(payload_list, list) or not all(isinstance(payload, str) for payload in payload_list):
+                return jsonify({'status': 'fail', 'message': 'Payload types must be strings in a list'}), 400
+            payload_types.update(payload_list)
+
+        # Ensure both sensor IDs and payload types are provided
+        if not sensor_ids or not payload_types:
+            return jsonify({'status': 'fail', 'message': 'Sensor IDs and payload types are required'}), 400
+
+        # Handle time range
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+
+        if not start_time or not end_time:
+            return jsonify({'status': 'fail', 'message': 'Start time and end time are required'}), 400
+
+        # Convert start_time and end_time to datetime objects
+        try:
+            start_time = datetime.fromisoformat(start_time).astimezone(timezone.utc)
+            end_time = datetime.fromisoformat(end_time).astimezone(timezone.utc)
+        except ValueError:
+            return jsonify({'status': 'fail', 'message': 'Invalid time format. Please use ISO 8601 format.'}), 400
+
+        mapping = get_sensor_mapping()
+        derivation_map = {item['payload_value']: item for item in mapping}
+
+        # Build the SQL query to fetch data within the time range
+        stmt = select(
+            table.columns.dev_eui,
+            table.columns.time,
+            table.columns.payload,
+            table.columns.metadata
+        ).where(
+            and_(
+                table.columns.dev_eui.in_(sensor_ids),
+                table.columns.time >= start_time,
+                table.columns.time <= end_time
+            )
+        )
+
+        with engine.connect() as connection:
+            results = connection.execute(stmt).fetchall()
+
+        response_data = []
+
+        # Process each row of data
+        for row in results:
+            dev_eui = row.dev_eui
+            timestamp = row.time
+            payload = row.payload
+            metadata = row.metadata
+
+            for payload_type in payload_types:
+                 if payload_type in payload or payload_type in metadata:
+                    if payload_type in payload:
+                        data_point = payload[payload_type]
+                    else:
+                        data_point = metadata[payload_type]
+
+                    # Apply derivation if it exists
+                    if payload_type in derivation_map:
+                        derivation = derivation_map[payload_type]['derivation']
+                        if derivation:
+                            try:
+                                locals_dict = {'value': data_point}
+                                data_point = eval(derivation, {}, locals_dict)
+                            except Exception as e:
+                                print(f"Error in derivation for {dev_eui} on {timestamp}: {e}")
+
+                    # Store the processed data
+                    response_data.append({
+                        'dev_eui': dev_eui,
+                        'timestamp': timestamp.isoformat(),
+                        'payload_type': payload_type,
+                        'value': data_point,
+                    })
+
+        return jsonify({'status': 'success', 'data': response_data})
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return jsonify({'status': 'failure', 'message': str(e)}), 500
+
 # Used to get the type of device
 @data_endpoint.route('/devices', methods=['POST'])
 def get_device_type():
@@ -235,7 +329,6 @@ def get_device_type():
                                 "payload_value": key,
                                 "display_name": payload_to_display_name[key]
                             }]
-        print(capabilities)
         return jsonify({'status': 'success', 'capabilities': capabilities})
 
     except Exception as e:
