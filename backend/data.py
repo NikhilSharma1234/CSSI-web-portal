@@ -1,5 +1,6 @@
 #from __main__ import app
 from collections import defaultdict
+from io import StringIO
 from flask import jsonify, request
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select, desc
@@ -7,6 +8,12 @@ import os
 from dotenv import load_dotenv
 from helper import get_sensor_mapping
 from flask import Blueprint
+import pandas as pd
+import boto3
+from botocore.client import Config
+import asyncio
+import httpx
+import json
 
 load_dotenv()
 
@@ -337,7 +344,7 @@ def get_device_type():
 
 # Used for data export feature
 @data_endpoint.route('/export', methods=['POST'])
-def export_data():
+async def export_data():
     try:
         response_object = {'status': 'success'}
         data = request.get_json()
@@ -408,6 +415,33 @@ def export_data():
 
         # Add the mapping info to the response
         response_object['mapping'] = mapping_info
+
+                # Convert data to DataFrame
+        df = pd.DataFrame(response_object["data"])
+
+        # Convert timestamp to string format
+        df["timestamp"] = df["timestamp"].astype(str)
+
+        # Save CSV to a buffer
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # S3 bucket details
+        s3_bucket_name = "csv-bucket-nikhil"
+        s3_file_name = f"sensor_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        # Upload to S3
+        s3_client = boto3.client("s3",
+            config=Config(signature_version='s3v4'))
+        
+        s3_client.put_object(
+            Bucket=s3_bucket_name,
+            Key=s3_file_name,
+            Body=csv_buffer.getvalue(),
+            ContentType="text/csv"
+        )
+        presigned_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_file_name}"
+        response_object["CSV_URL"] = presigned_url
         
         return jsonify(response_object)
     
@@ -415,3 +449,59 @@ def export_data():
         print(e)
         response_object = {'status': 'failure'}
         return jsonify(response_object), 500
+
+@data_endpoint.route('/ai', methods=['POST'])
+async def fetch_ai_response():
+    try:
+        response_object = {'status': 'success'}
+        data = request.get_json()
+        urlFile = data.get("url")
+        messages = data.get("messages")
+        print(messages)
+        data = await fetch_ai_response(urlFile, messages)
+        print(data)
+        response_object["data"] = data
+        return jsonify(response_object)
+    except Exception as e:
+        print(e)
+        response_object = {'status': 'failure'}
+        return jsonify(response_object), 500
+    
+async def fetch_ai_response(urlFile, messages):
+    print("here")
+    url = "https://www.chatcsv.co/api/v1/chat"
+    token = "REDACTED"  # Replace with your actual token
+
+    data = {
+        "model": "gpt-4-0613",
+        "messages":
+        [
+            {"role": "user", "content": "whats your name"},
+            {"role": "assistant", "content": "bob"},
+        ] + messages,
+        "files": [urlFile],  # Replace with actual file link
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Accept": "text/event-stream"
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, headers=headers, json=data, timeout=30.0)
+            data = ""
+            if response.status_code != 200:
+                raise Exception(f"HTTP error! Status: {response.status_code}, Response: {response.text}")
+
+            # Read response as a stream
+            async for chunk in response.aiter_text():
+                data += chunk
+                print(chunk, end="")  # Process SSE chunks
+            return data
+
+        except Exception as error:
+            print("Error fetching chat response:", error)
+
+# Run the async function
