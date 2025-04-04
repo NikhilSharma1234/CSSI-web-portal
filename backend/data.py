@@ -56,7 +56,9 @@ def dataButton():
         now = datetime.now(timezone.utc)
         period_mapping = {
             '1H': timedelta(hours=1),
+            '6H': timedelta(hours=6),
             '24H': timedelta(hours=24),
+            '3D': timedelta(days=3),
             '7D': timedelta(days=7),
             '14D': timedelta(days=14),
             '30D': timedelta(days=30),
@@ -125,7 +127,9 @@ def dataButton():
         if selected_aggregation != 'None':
             interval_mapping = {
                 '1 Hour': timedelta(hours=1),
+                '6 Hours': timedelta(hours=6),
                 '1 Day': timedelta(days=1),
+                '3 Day': timedelta(days=3),
                 '7 Days': timedelta(days=7),
                 '1 Month': timedelta(days=30),
                 '6 Months': timedelta(days=180)
@@ -201,6 +205,7 @@ def data():
         # Handle time range
         start_time = data.get('start_time')
         end_time = data.get('end_time')
+        selected_aggregation = data.get('aggregation', 'None')  # Default to 'None' if not provided
 
         if not start_time or not end_time:
             return jsonify({'status': 'fail', 'message': 'Start time and end time are required'}), 400
@@ -242,7 +247,7 @@ def data():
             metadata = row.metadata
 
             for payload_type in payload_types:
-                 if payload_type in payload or payload_type in metadata:
+                if payload_type in payload or payload_type in metadata:
                     if payload_type in payload:
                         data_point = payload[payload_type]
                     else:
@@ -261,10 +266,66 @@ def data():
                     # Store the processed data
                     response_data.append({
                         'dev_eui': dev_eui,
-                        'timestamp': timestamp.isoformat(),
+                        'timestamp': timestamp,
                         'payload_type': payload_type,
                         'value': data_point,
                     })
+
+        # Apply aggregation if selected
+        if selected_aggregation != 'None':
+            interval_mapping = {
+                '1 Hour': timedelta(hours=1),
+                '6 Hours': timedelta(hours=6),
+                '1 Day': timedelta(days=1),
+                '3 Day': timedelta(days=3),
+                '7 Days': timedelta(days=7),
+                '1 Month': timedelta(days=30),
+                '6 Months': timedelta(days=180)
+            }
+
+            if selected_aggregation not in interval_mapping:
+                return jsonify({'status': 'fail', 'message': 'Invalid aggregation option'}), 400
+
+            aggregation_interval = interval_mapping[selected_aggregation]
+
+            # Use a nested defaultdict to store lists for each payload_type within each (dev_eui, interval_start) key
+            aggregated_data = defaultdict(lambda: defaultdict(list))
+
+            for item in response_data:
+                dev_eui = item['dev_eui']
+                timestamp = item['timestamp']
+                if item['value'] == 'NULL':
+                    continue
+                data_point = float(item['value'])
+                payload_type = item['payload_type']
+
+                # Calculate the interval start time based on the aggregation interval
+                if aggregation_interval == timedelta(days=1):
+                    interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+                elif aggregation_interval == timedelta(weeks=1):
+                    interval_start = timestamp - timedelta(days=timestamp.weekday())
+                    interval_start = interval_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                elif aggregation_interval.days >= 30:
+                    interval_start = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                else:
+                    seconds = int(aggregation_interval.total_seconds())
+                    rounded_seconds = (timestamp.minute * 60 + timestamp.second) % seconds
+                    interval_start = timestamp - timedelta(seconds=rounded_seconds, microseconds=timestamp.microsecond)
+
+                # Group data points by (dev_eui, interval_start, payload_type)
+                aggregated_data[(dev_eui, interval_start)][payload_type].append(data_point)
+
+            # Calculate the average for each group
+            response_data = [
+                {
+                    'dev_eui': dev_eui,
+                    'timestamp': interval_start.isoformat(),
+                    'payload_type': payload_type,
+                    'value': sum(values) / len(values)  # Calculate the average
+                }
+                for (dev_eui, interval_start), payload_dict in aggregated_data.items()
+                for payload_type, values in payload_dict.items()
+            ]
 
         return jsonify({'status': 'success', 'data': response_data})
 
