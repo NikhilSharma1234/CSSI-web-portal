@@ -56,9 +56,7 @@ def dataButton():
         now = datetime.now(timezone.utc)
         period_mapping = {
             '1H': timedelta(hours=1),
-            '6H': timedelta(hours=6),
             '24H': timedelta(hours=24),
-            '3D': timedelta(days=3),
             '7D': timedelta(days=7),
             '14D': timedelta(days=14),
             '30D': timedelta(days=30),
@@ -127,9 +125,7 @@ def dataButton():
         if selected_aggregation != 'None':
             interval_mapping = {
                 '1 Hour': timedelta(hours=1),
-                '6 Hours': timedelta(hours=6),
                 '1 Day': timedelta(days=1),
-                '3 Day': timedelta(days=3),
                 '7 Days': timedelta(days=7),
                 '1 Month': timedelta(days=30),
                 '6 Months': timedelta(days=180)
@@ -175,8 +171,33 @@ def dataButton():
                 for (dev_eui, interval_start), payload_dict in aggregated_data.items()
                 for payload_type, values in payload_dict.items()
             ]
+        # Convert data to DataFrame
+        df = pd.DataFrame(response_data)
 
-        return jsonify({'status': 'success', 'data': response_data})
+        # Convert timestamp to string format
+        df["timestamp"] = df["timestamp"].astype(str)
+
+        # Save CSV to a buffer
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # S3 bucket details
+        s3_bucket_name = "csv-bucket-nikhil"
+        s3_file_name = f"sensor_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        # Upload to S3
+        s3_client = boto3.client("s3",
+            config=Config(signature_version='s3v4'))
+        
+        s3_client.put_object(
+            Bucket=s3_bucket_name,
+            Key=s3_file_name,
+            Body=csv_buffer.getvalue(),
+            ContentType="text/csv"
+        )
+        presigned_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_file_name}"
+
+        return jsonify({'status': 'success', 'data': response_data, 'CSV_URL': presigned_url})
 
     except Exception as e:
         print(f"Error occurred: {e}")
@@ -205,7 +226,6 @@ def data():
         # Handle time range
         start_time = data.get('start_time')
         end_time = data.get('end_time')
-        selected_aggregation = data.get('aggregation', 'None')  # Default to 'None' if not provided
 
         if not start_time or not end_time:
             return jsonify({'status': 'fail', 'message': 'Start time and end time are required'}), 400
@@ -247,7 +267,7 @@ def data():
             metadata = row.metadata
 
             for payload_type in payload_types:
-                if payload_type in payload or payload_type in metadata:
+                 if payload_type in payload or payload_type in metadata:
                     if payload_type in payload:
                         data_point = payload[payload_type]
                     else:
@@ -266,66 +286,10 @@ def data():
                     # Store the processed data
                     response_data.append({
                         'dev_eui': dev_eui,
-                        'timestamp': timestamp,
+                        'timestamp': timestamp.isoformat(),
                         'payload_type': payload_type,
                         'value': data_point,
                     })
-
-        # Apply aggregation if selected
-        if selected_aggregation != 'None':
-            interval_mapping = {
-                '1 Hour': timedelta(hours=1),
-                '6 Hours': timedelta(hours=6),
-                '1 Day': timedelta(days=1),
-                '3 Day': timedelta(days=3),
-                '7 Days': timedelta(days=7),
-                '1 Month': timedelta(days=30),
-                '6 Months': timedelta(days=180)
-            }
-
-            if selected_aggregation not in interval_mapping:
-                return jsonify({'status': 'fail', 'message': 'Invalid aggregation option'}), 400
-
-            aggregation_interval = interval_mapping[selected_aggregation]
-
-            # Use a nested defaultdict to store lists for each payload_type within each (dev_eui, interval_start) key
-            aggregated_data = defaultdict(lambda: defaultdict(list))
-
-            for item in response_data:
-                dev_eui = item['dev_eui']
-                timestamp = item['timestamp']
-                if item['value'] == 'NULL':
-                    continue
-                data_point = float(item['value'])
-                payload_type = item['payload_type']
-
-                # Calculate the interval start time based on the aggregation interval
-                if aggregation_interval == timedelta(days=1):
-                    interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
-                elif aggregation_interval == timedelta(weeks=1):
-                    interval_start = timestamp - timedelta(days=timestamp.weekday())
-                    interval_start = interval_start.replace(hour=0, minute=0, second=0, microsecond=0)
-                elif aggregation_interval.days >= 30:
-                    interval_start = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                else:
-                    seconds = int(aggregation_interval.total_seconds())
-                    rounded_seconds = (timestamp.minute * 60 + timestamp.second) % seconds
-                    interval_start = timestamp - timedelta(seconds=rounded_seconds, microseconds=timestamp.microsecond)
-
-                # Group data points by (dev_eui, interval_start, payload_type)
-                aggregated_data[(dev_eui, interval_start)][payload_type].append(data_point)
-
-            # Calculate the average for each group
-            response_data = [
-                {
-                    'dev_eui': dev_eui,
-                    'timestamp': interval_start.isoformat(),
-                    'payload_type': payload_type,
-                    'value': sum(values) / len(values)  # Calculate the average
-                }
-                for (dev_eui, interval_start), payload_dict in aggregated_data.items()
-                for payload_type, values in payload_dict.items()
-            ]
 
         return jsonify({'status': 'success', 'data': response_data})
 
@@ -410,7 +374,8 @@ async def export_data():
         response_object = {'status': 'success'}
         data = request.get_json()
         
-        selected_devices = data.get('devices', [])
+        devices = data.get('devices', [])
+        selected_devices = devices.keys()
         start_time = data.get('startTime')
         end_time = data.get('endTime')
         
@@ -449,6 +414,7 @@ async def export_data():
         for counter, row in enumerate(results):
             data_entry = {
                 'dev_eui': row.dev_eui,
+                'sensor_name': devices[row.dev_eui],
                 'timestamp': row.time,
                 'item_number': counter
             }
