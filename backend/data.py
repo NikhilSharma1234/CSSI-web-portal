@@ -532,3 +532,34 @@ async def fetch_ai_response(urlFile, messages):
             print("Error fetching chat response:", error)
 
 # Run the async function
+
+@data_endpoint.route('/event', methods=['POST'])
+async def send_user_event():
+    try:
+        response_object = {'status': 'success'}
+        data = request.get_json()
+        user_id = data.get("user_id")
+        event_type = data.get("event_type")
+        event_description = data.get("event_description")
+        project = data.get("project")
+        page = data.get("page")
+    
+        dynamodb = boto3.resource('dynamodb')
+
+        table=dynamodb.Table('nikhil-user-events')
+
+        table.put_item(
+            Item={
+                'time': datetime.now().strftime('%Y%m%d_%H%M%S'),
+                'user_id': user_id,
+                'event_type': event_type,
+                'event_description': event_description,
+                'page': page,
+                'project': project,
+            }
+        )
+        return jsonify(response_object)
+    except Exception as e:
+        print(e)
+        response_object = {'status': 'failure'}
+        return jsonify(response_object), 500
