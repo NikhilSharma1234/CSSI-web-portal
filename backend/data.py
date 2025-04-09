@@ -14,6 +14,7 @@ from botocore.client import Config
 import asyncio
 import httpx
 import json
+import re
 
 load_dotenv()
 
@@ -565,3 +566,60 @@ async def send_user_event():
         print(e)
         response_object = {'status': 'failure'}
         return jsonify(response_object), 500
+    
+@data_endpoint.route('/suggest', methods=['POST'])
+async def fetch_ai_suggestions():
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id")
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table('nikhil-user-events')
+
+        response = table.query(
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user_id),
+            ScanIndexForward=False,  # Sort descending = newest first
+            Limit=100
+        )
+
+        # Convert data to DataFrame
+        df = pd.DataFrame(response.get('Items', []))
+
+        # Save CSV to a buffer
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # S3 bucket details
+        s3_bucket_name = "csv-bucket-nikhil"
+        s3_file_name = f"suggestions{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        # Upload to S3
+        s3_client = boto3.client("s3",
+            config=Config(signature_version='s3v4'))
+        
+        s3_client.put_object(
+            Bucket=s3_bucket_name,
+            Key=s3_file_name,
+            Body=csv_buffer.getvalue(),
+            ContentType="text/csv"
+        )
+        presigned_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_file_name}"
+        messages = [
+            {"role": "user", "content": "This is the data from recent user events. Give me 4 suggestions of what the user might want to do next on the portal, 2 of FetchData type and 2 of Navigation type. FetchData will always have the extra attribute populated. Give me the page, project, event_type, extra and event_description matching with each suggestion in JSON format like: {\"suggestions\": [{\"event_type\": \"\",\"event_description\": \"\",\"extra\": \"...\",\"page\": \"\",\"project\": \"\", \"AI_explanation\": \"\"},...]}. Do not give me any made up pages or data. Make sure what you return is ONLY JSON and NO other text or content. Stringify the json content within extra and do not omit any data within the row."}
+        ]
+        data = await fetch_ai_response(presigned_url, messages)
+
+        response_text = data.strip()
+    
+        if response_text.startswith('{'):
+            json_str = response_text
+        else:
+            json_str = response_text.split("```json", 1)[1].split("```", 1)[0].strip()
+
+        filteredData = json.loads(json_str)
+
+        return jsonify({
+            'status': 'success', 'suggestions': filteredData
+        })
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 'failure'}), 500
