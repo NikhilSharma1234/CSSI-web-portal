@@ -543,6 +543,7 @@ async def send_user_event():
         event_description = data.get("event_description")
         project = data.get("project")
         page = data.get("page")
+        extra = data.get("extra")
     
         dynamodb = boto3.resource('dynamodb')
 
@@ -554,6 +555,7 @@ async def send_user_event():
                 'user_id': user_id,
                 'event_type': event_type,
                 'event_description': event_description,
+                'extra': extra,
                 'page': page,
                 'project': project,
             }
