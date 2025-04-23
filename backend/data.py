@@ -15,6 +15,7 @@ import asyncio
 import httpx
 import json
 import re
+from copy import deepcopy
 
 load_dotenv()
 
@@ -363,6 +364,140 @@ def get_device_type():
                                 "display_name": payload_to_display_name[key]
                             }]
         return jsonify({'status': 'success', 'capabilities': capabilities})
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return jsonify({'status': 'failure', 'message': str(e)}), 500
+    
+# Used to get the type of device
+@data_endpoint.route('/devicesCSV', methods=['POST'])
+def get_device_type_CSV():
+    try:
+        data = request.get_json()
+        sensor_ids = data.get('sensor_ids', [])
+        sensorWithLocation = data.get('sensorsWithLocation', [])
+
+        if not sensor_ids:
+            return jsonify({'status': 'fail', 'message': 'Sensor IDs are required'}), 400
+
+        capabilities = {}
+        mapping = get_sensor_mapping()
+        payload_to_display_name = {item["payload_value"]: item["display_name"] for item in mapping}
+        payload_to_type = {item["payload_value"]: item["type"] for item in mapping}
+
+        for device_id in sensor_ids:
+            stmt = select(table.columns.dev_eui, table.columns.payload, table.columns.metadata, table.columns.time).where(
+                and_(
+                    table.columns.dev_eui == device_id,
+                    ~table.columns.payload.has_key('error')  # Exclude rows with an 'error' key in payload
+                )
+            ).order_by(
+                desc(table.columns.time)
+            ).limit(1)
+
+            with engine.connect() as connection:
+                result = connection.execute(stmt).first()
+            if result:
+                payload = result.payload
+                metadata = result.metadata
+                dev_eui = result.dev_eui
+                capabilities[dev_eui] = {
+                    "lastReading": {
+                        "time": result.time
+                    }
+                }
+                for key in payload.keys():
+                    if key in payload_to_type.keys():
+                        capabilities[dev_eui]["type"] = payload_to_type[key]
+                    if key in payload_to_display_name.keys():
+                        capabilities[dev_eui]["lastReading"][payload_to_display_name[key]] = payload[key]
+                        if "readings" in capabilities[dev_eui].keys():
+                            capabilities[dev_eui]["readings"].append({
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            })
+                        else:
+                            capabilities[dev_eui]["readings"] = [{
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            }]
+                # For any information needed from the metadata
+                for key in metadata.keys():
+                    if key in payload_to_display_name.keys():
+                        if "readings" in capabilities[dev_eui].keys():
+                            capabilities[dev_eui]["readings"].append({
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            })
+                        else:
+                            capabilities[dev_eui]["readings"] = [{
+                                "payload_value": key,
+                                "display_name": payload_to_display_name[key]
+                            }]
+        print(capabilities)
+        print(sensorWithLocation)
+        merged = {}
+
+        for dev_eui, cap_data in capabilities.items():
+            merged[dev_eui] = deepcopy(cap_data)  # Avoid modifying original
+
+            # Add device_id and location if available
+            sensor_info = sensorWithLocation.get(dev_eui, {})
+            merged[dev_eui]["device_id"] = sensor_info.get("device_id", None)
+
+            if "location" in sensor_info:
+                merged[dev_eui]["location"] = sensor_info["location"]
+
+    
+        reading_keys = set()
+        for sensor in merged.values():
+            if 'lastReading' in sensor:
+                reading_keys.update(sensor['lastReading'].keys())
+        reading_keys.discard('time')
+        sorted_reading_keys = sorted(reading_keys)
+
+        # Step 2: Build rows for the DataFrame
+        rows = []
+
+        for dev_eui, data in merged.items():
+            row = {
+                'dev_eui': dev_eui,
+                'device_id': data.get('device_id'),
+                'type': data.get('type'),
+                'time': data.get('lastReading', {}).get('time'),
+                'latitude': data.get('location', {}).get('latitude', None),
+                'longitude': data.get('location', {}).get('longitude', None),
+            }
+
+            for key in sorted_reading_keys:
+                row[key] = data['lastReading'].get(key, None)
+
+            rows.append(row)
+
+        # Step 3: Create and return DataFrame
+        df = pd.DataFrame(rows)
+
+        # Save CSV to a buffer
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # S3 bucket details
+        s3_bucket_name = "csv-bucket-nikhil"
+        s3_file_name = f"devices_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        # Upload to S3
+        s3_client = boto3.client("s3",
+            config=Config(signature_version='s3v4'))
+        
+        s3_client.put_object(
+            Bucket=s3_bucket_name,
+            Key=s3_file_name,
+            Body=csv_buffer.getvalue(),
+            ContentType="text/csv"
+        )
+        presigned_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{s3_file_name}"
+
+        return jsonify({'status': 'success', 'capabilities': capabilities, 'CSV_URL': presigned_url})
 
     except Exception as e:
         print(f"Error occurred: {e}")
