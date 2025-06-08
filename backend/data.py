@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select, desc
 import os
 from dotenv import load_dotenv
-from helper import get_sensor_mapping
+from helper import get_sensor_mapping, standardize_unit
 from flask import Blueprint
 
 load_dotenv()
@@ -50,11 +50,13 @@ def dataButton():
         period_mapping = {
             '1H': timedelta(hours=1),
             '6H': timedelta(hours=6),
+            '12H': timedelta(hours=12),
             '24H': timedelta(hours=24),
             '3D': timedelta(days=3),
             '7D': timedelta(days=7),
             '14D': timedelta(days=14),
             '30D': timedelta(days=30),
+            '3M': timedelta(days=90),
             '6M': timedelta(days=180),
             '1Y': timedelta(days=365),
             'ALL': None
@@ -64,8 +66,17 @@ def dataButton():
             return jsonify({'status': 'fail', 'message': 'Invalid period selected'}), 400
 
         start_time = datetime.min.replace(tzinfo=timezone.utc) if predefined_period == 'ALL' else now - period_mapping[predefined_period]
+        end_time = now
+
+        if data.get("visualization_type") == "clustered":
+            return jsonify({'status': 'success', 'data': get_clustered_data(data, start_time, end_time)})
         mapping = get_sensor_mapping()
 
+        # Create mapping of payload types to their units
+        unit_map = {
+            item['payload_value']: standardize_unit(item['payload_value'], item.get('unit', '')) 
+            for item in mapping
+        }
         derivation_map = {item['payload_value']: item for item in mapping}
         
         stmt = select(
@@ -102,28 +113,32 @@ def dataButton():
                     if payload_type in derivation_map:
                         derivation = derivation_map[payload_type]['derivation']
                         if derivation:
-                            # Safely evaluate the derivation expression
                             try:
                                 locals_dict = {'value': data_point}
                                 data_point = eval(derivation, {}, locals_dict)
                             except Exception as e:
                                 print(f"Error in derivation for {dev_eui} on {timestamp}: {e}")
 
-                    # Store the processed data immediately
+                    # Store the processed data with unit
                     response_data.append({
                         'dev_eui': dev_eui,
                         'timestamp': timestamp,
                         'payload_type': payload_type,
                         'value': data_point,
+                        'unit': unit_map.get(payload_type, '')  # Add unit from mapping
                     })
 
         if selected_aggregation != 'None':
             interval_mapping = {
                 '1 Hour': timedelta(hours=1),
+                '2 Hours': timedelta(hours=2),
                 '6 Hours': timedelta(hours=6),
+                '12 Hours': timedelta(hours=12),
                 '1 Day': timedelta(days=1),
+                '2 Days': timedelta(days=2),
                 '3 Day': timedelta(days=3),
                 '7 Days': timedelta(days=7),
+                '14 Days': timedelta(days=14),
                 '1 Month': timedelta(days=30),
                 '6 Months': timedelta(days=180)
             }
@@ -133,8 +148,8 @@ def dataButton():
 
             aggregation_interval = interval_mapping[selected_aggregation]
             
-            # Update: Nested defaultdict to store lists for each payload_type within each (dev_eui, interval_start) key
             aggregated_data = defaultdict(lambda: defaultdict(list))
+            unit_data = {}  # Track units for each payload type
 
             for item in response_data:
                 dev_eui = item['dev_eui']
@@ -142,7 +157,8 @@ def dataButton():
                 if item['value'] == 'NULL': 
                     continue
                 data_point = float(item['value'])
-                payload_type = item['payload_type']  # Get the payload type
+                payload_type = item['payload_type']
+                unit_data[payload_type] = item['unit']  # Store unit
 
                 if aggregation_interval == timedelta(days=1): 
                     interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -163,7 +179,8 @@ def dataButton():
                     'dev_eui': dev_eui,
                     'timestamp': interval_start.isoformat(),
                     'payload_type': payload_type,
-                    'value': sum(values) / len(values) 
+                    'value': sum(values) / len(values),
+                    'unit': unit_data[payload_type]  # Preserve unit in aggregated data
                 }
                 for (dev_eui, interval_start), payload_dict in aggregated_data.items()
                 for payload_type, values in payload_dict.items()
@@ -175,35 +192,30 @@ def dataButton():
         print(f"Error occurred: {e}")
         return jsonify({'status': 'failure', 'message': str(e)}), 500
 
-# Used for data visualization - Date Time Picker
 @data_endpoint.route('/data', methods=['POST'])
 def data():
     try:
         data = request.get_json()
-        # Extract sensor data, sensor ids, payload types, and time range from request
+        visualization_type = data.get("visualization_type", "time_series")
         selected_sensor_data = data.get('data', {})
         sensor_ids = list(selected_sensor_data.keys())
         payload_types = set()
 
-        # Ensure payload types are valid
         for payload_list in selected_sensor_data.values():
             if not isinstance(payload_list, list) or not all(isinstance(payload, str) for payload in payload_list):
                 return jsonify({'status': 'fail', 'message': 'Payload types must be strings in a list'}), 400
             payload_types.update(payload_list)
 
-        # Ensure both sensor IDs and payload types are provided
         if not sensor_ids or not payload_types:
             return jsonify({'status': 'fail', 'message': 'Sensor IDs and payload types are required'}), 400
 
-        # Handle time range
         start_time = data.get('start_time')
         end_time = data.get('end_time')
-        selected_aggregation = data.get('aggregation', 'None')  # Default to 'None' if not provided
+        selected_aggregation = data.get('aggregation', 'None')
 
         if not start_time or not end_time:
             return jsonify({'status': 'fail', 'message': 'Start time and end time are required'}), 400
 
-        # Convert start_time and end_time to datetime objects
         try:
             start_time = datetime.fromisoformat(start_time).astimezone(timezone.utc)
             end_time = datetime.fromisoformat(end_time).astimezone(timezone.utc)
@@ -211,9 +223,12 @@ def data():
             return jsonify({'status': 'fail', 'message': 'Invalid time format. Please use ISO 8601 format.'}), 400
 
         mapping = get_sensor_mapping()
+        unit_map = {
+            item['payload_value']: standardize_unit(item['payload_value'], item.get('unit', '')) 
+            for item in mapping
+        }
         derivation_map = {item['payload_value']: item for item in mapping}
 
-        # Build the SQL query to fetch data within the time range
         stmt = select(
             table.columns.dev_eui,
             table.columns.time,
@@ -232,7 +247,6 @@ def data():
 
         response_data = []
 
-        # Process each row of data
         for row in results:
             dev_eui = row.dev_eui
             timestamp = row.time
@@ -246,7 +260,6 @@ def data():
                     else:
                         data_point = metadata[payload_type]
 
-                    # Apply derivation if it exists
                     if payload_type in derivation_map:
                         derivation = derivation_map[payload_type]['derivation']
                         if derivation:
@@ -256,75 +269,211 @@ def data():
                             except Exception as e:
                                 print(f"Error in derivation for {dev_eui} on {timestamp}: {e}")
 
-                    # Store the processed data
                     response_data.append({
                         'dev_eui': dev_eui,
                         'timestamp': timestamp,
                         'payload_type': payload_type,
                         'value': data_point,
+                        'unit': unit_map.get(payload_type, '')  # Add unit from mapping
                     })
 
-        # Apply aggregation if selected
-        if selected_aggregation != 'None':
-            interval_mapping = {
+        if visualization_type == "clustered":
+        
+            return jsonify({'status': 'success', 'data': get_clustered_data(data, start_time, end_time)})
+
+        else: 
+            if selected_aggregation != 'None':
+                interval_mapping = {
                 '1 Hour': timedelta(hours=1),
+                '2 Hours': timedelta(hours=2),
                 '6 Hours': timedelta(hours=6),
+                '12 Hours': timedelta(hours=12),
                 '1 Day': timedelta(days=1),
+                '2 Days': timedelta(days=2),
                 '3 Day': timedelta(days=3),
                 '7 Days': timedelta(days=7),
+                '14 Days': timedelta(days=14),
                 '1 Month': timedelta(days=30),
                 '6 Months': timedelta(days=180)
-            }
-
-            if selected_aggregation not in interval_mapping:
-                return jsonify({'status': 'fail', 'message': 'Invalid aggregation option'}), 400
-
-            aggregation_interval = interval_mapping[selected_aggregation]
-
-            # Use a nested defaultdict to store lists for each payload_type within each (dev_eui, interval_start) key
-            aggregated_data = defaultdict(lambda: defaultdict(list))
-
-            for item in response_data:
-                dev_eui = item['dev_eui']
-                timestamp = item['timestamp']
-                if item['value'] == 'NULL':
-                    continue
-                data_point = float(item['value'])
-                payload_type = item['payload_type']
-
-                # Calculate the interval start time based on the aggregation interval
-                if aggregation_interval == timedelta(days=1):
-                    interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
-                elif aggregation_interval == timedelta(weeks=1):
-                    interval_start = timestamp - timedelta(days=timestamp.weekday())
-                    interval_start = interval_start.replace(hour=0, minute=0, second=0, microsecond=0)
-                elif aggregation_interval.days >= 30:
-                    interval_start = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-                else:
-                    seconds = int(aggregation_interval.total_seconds())
-                    rounded_seconds = (timestamp.minute * 60 + timestamp.second) % seconds
-                    interval_start = timestamp - timedelta(seconds=rounded_seconds, microseconds=timestamp.microsecond)
-
-                # Group data points by (dev_eui, interval_start, payload_type)
-                aggregated_data[(dev_eui, interval_start)][payload_type].append(data_point)
-
-            # Calculate the average for each group
-            response_data = [
-                {
-                    'dev_eui': dev_eui,
-                    'timestamp': interval_start.isoformat(),
-                    'payload_type': payload_type,
-                    'value': sum(values) / len(values)  # Calculate the average
                 }
-                for (dev_eui, interval_start), payload_dict in aggregated_data.items()
-                for payload_type, values in payload_dict.items()
-            ]
+
+                if selected_aggregation not in interval_mapping:
+                    return jsonify({'status': 'fail', 'message': 'Invalid aggregation option'}), 400
+
+                aggregation_interval = interval_mapping[selected_aggregation]
+                aggregated_data = defaultdict(lambda: defaultdict(list))
+                unit_data = {}  # Track units for each payload type
+
+                for item in response_data:
+                    dev_eui = item['dev_eui']
+                    timestamp = item['timestamp']
+                    if item['value'] == 'NULL':
+                        continue
+                    data_point = float(item['value'])
+                    payload_type = item['payload_type']
+                    unit_data[payload_type] = item['unit']  # Store unit
+
+                    if aggregation_interval == timedelta(days=1):
+                        interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+                    elif aggregation_interval == timedelta(weeks=1):
+                        interval_start = timestamp - timedelta(days=timestamp.weekday())
+                        interval_start = interval_start.replace(hour=0, minute=0, second=0, microsecond=0)
+                    elif aggregation_interval.days >= 30:
+                        interval_start = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                    else:
+                        seconds = int(aggregation_interval.total_seconds())
+                        rounded_seconds = (timestamp.minute * 60 + timestamp.second) % seconds
+                        interval_start = timestamp - timedelta(seconds=rounded_seconds, microseconds=timestamp.microsecond)
+
+                    aggregated_data[(dev_eui, interval_start)][payload_type].append(data_point)
+
+                response_data = [
+                    {
+                        'dev_eui': dev_eui,
+                        'timestamp': interval_start.isoformat(),
+                        'payload_type': payload_type,
+                        'value': sum(values) / len(values),
+                        'unit': unit_data[payload_type]  
+                    }
+                    for (dev_eui, interval_start), payload_dict in aggregated_data.items()
+                    for payload_type, values in payload_dict.items()
+                ]
 
         return jsonify({'status': 'success', 'data': response_data})
 
     except Exception as e:
         print(f"Error occurred: {e}")
         return jsonify({'status': 'failure', 'message': str(e)}), 500
+
+def get_clustered_data(data, start_time, end_time):
+    selected_sensor_data = data.get('data', {})
+    sensor_ids = list(selected_sensor_data.keys())
+    payload_types = set()
+    for payload_list in selected_sensor_data.values():
+        payload_types.update(payload_list)
+
+    aggregation = data.get('aggregation', '1 Hour')
+    summary = data.get('summary', 'minimum').lower()
+    time_filter = data.get('time_filter', {})  # {start: "HH:mm", end: "HH:mm"}
+    day_filter = data.get('day_filter', [])    # ["Mon", "Tue", ...]
+
+    stmt = select(
+        table.columns.dev_eui,
+        table.columns.time,
+        table.columns.payload,
+        table.columns.metadata
+    ).where(
+        and_(
+            table.columns.dev_eui.in_(sensor_ids),
+            table.columns.time >= start_time,
+            table.columns.time <= end_time
+        )
+    )
+
+    with engine.connect() as connection:
+        results = connection.execute(stmt).fetchall()
+
+    mapping = get_sensor_mapping()
+    unit_map = {
+        item['payload_value']: standardize_unit(item['payload_value'], item.get('unit', ''))
+        for item in mapping
+    }
+    derivation_map = {item['payload_value']: item for item in mapping}
+
+    interval_map = {
+        '1 Hour': timedelta(hours=1),
+        '2 Hours': timedelta(hours=2),
+        '6 Hours': timedelta(hours=6),
+        '12 Hours': timedelta(hours=12),
+        '1 Day': timedelta(days=1),
+        '2 Days': timedelta(days=2),
+        '3 Day': timedelta(days=3),
+        '7 Days': timedelta(days=7),
+        '14 Days': timedelta(days=14),
+        '1 Month': timedelta(days=30),
+    }
+
+    if aggregation not in interval_map:
+        raise ValueError(f"Invalid aggregation: {aggregation}")
+    aggregation_interval = interval_map[aggregation]
+
+    # Grouped format: {(dev_eui, payload_type, interval_start): [values]}
+    grouped = defaultdict(list)
+
+    for row in results:
+        timestamp = row.time
+        dev_eui = row.dev_eui
+        payload = row.payload
+        metadata = row.metadata
+
+        # Filter by day and time
+        weekday = timestamp.strftime("%a")
+        time_str = timestamp.strftime("%H:%M")
+        if day_filter and weekday not in day_filter:
+            continue
+        if time_filter:
+            start_filter = time_filter.get("start", "00:00")
+            end_filter = time_filter.get("end", "23:59")
+            if not (start_filter <= time_str <= end_filter):
+                continue
+
+        # Determine the interval bucket
+        if aggregation == '1 Month':
+            # Use first of the month as interval bucket
+            interval_start = timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        elif aggregation_interval >= timedelta(days=1):
+            # Bucket by whole days
+            base = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+            days_since_epoch = (base - datetime(1970, 1, 1, tzinfo=timezone.utc)).days
+            bucket_start_day = (days_since_epoch // aggregation_interval.days) * aggregation_interval.days
+            interval_start = datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(days=bucket_start_day)
+        else:
+            # Bucket by hours/minutes
+            total_seconds = int(aggregation_interval.total_seconds())
+            since_midnight = (timestamp - timestamp.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+            rounded_seconds = int(since_midnight) // total_seconds * total_seconds
+            interval_start = timestamp.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(seconds=rounded_seconds)
+
+            
+        for payload_type in payload_types:
+            value = payload.get(payload_type) or metadata.get(payload_type)
+            if value is None:
+                continue
+            if payload_type in derivation_map:
+                derivation = derivation_map[payload_type].get('derivation')
+                if derivation:
+                    try:
+                        value = eval(derivation, {}, {'value': value})
+                    except Exception:
+                        continue
+            try:
+                grouped[(dev_eui, payload_type, interval_start)].append(float(value))
+            except:
+                continue
+
+    # Build final aggregated response
+    response_data = []
+    for (dev_eui, payload_type, timestamp), values in grouped.items():
+        if not values:
+            continue
+        if summary == "minimum":
+            agg_value = round(min(values), 2)
+        elif summary == "maximum":
+            agg_value = round(max(values), 2)
+        else:
+            agg_value = round(sum(values) / len(values), 2)
+
+        response_data.append({
+            'dev_eui': dev_eui,
+            'payload_type': payload_type,
+            'timestamp': timestamp.isoformat(),
+            'value': agg_value,
+            'unit': unit_map.get(payload_type, '')
+        })
+
+    response_data.sort(key=lambda r: r['timestamp'], reverse=True)
+
+    return response_data
 
 # Used to get the type of device
 @data_endpoint.route('/devices', methods=['POST'])
@@ -338,21 +487,28 @@ def get_device_type():
 
         capabilities = {}
         mapping = get_sensor_mapping()
-        payload_to_display_name = {item["payload_value"]: item["display_name"] for item in mapping}
-        payload_to_type = {item["payload_value"]: item["type"] for item in mapping}
+        
+        # Create enhanced mappings
+        payload_mappings = {
+            item["payload_value"]: {
+                "display_name": item["display_name"],
+                "type": item["type"],
+                "unit": standardize_unit(item["payload_value"], item.get("unit", ""))
+            }
+            for item in mapping
+        }
 
         for device_id in sensor_ids:
             stmt = select(table.columns.dev_eui, table.columns.payload, table.columns.metadata, table.columns.time).where(
                 and_(
                     table.columns.dev_eui == device_id,
-                    ~table.columns.payload.has_key('error')  # Exclude rows with an 'error' key in payload
+                    ~table.columns.payload.has_key('error')
                 )
-            ).order_by(
-                desc(table.columns.time)
-            ).limit(1)
+            ).order_by(desc(table.columns.time)).limit(1)
 
             with engine.connect() as connection:
                 result = connection.execute(stmt).first()
+                
             if result:
                 payload = result.payload
                 metadata = result.metadata
@@ -362,34 +518,40 @@ def get_device_type():
                         "time": result.time
                     }
                 }
+                
+                # Process payload data
                 for key in payload.keys():
-                    if key in payload_to_type.keys():
-                        capabilities[dev_eui]["type"] = payload_to_type[key]
-                    if key in payload_to_display_name.keys():
-                        capabilities[dev_eui]["lastReading"][payload_to_display_name[key]] = payload[key]
-                        if "readings" in capabilities[dev_eui].keys():
-                            capabilities[dev_eui]["readings"].append({
-                                "payload_value": key,
-                                "display_name": payload_to_display_name[key]
-                            })
+                    if key in payload_mappings:
+                        mapping = payload_mappings[key]
+                        capabilities[dev_eui]["type"] = mapping["type"]
+                        capabilities[dev_eui]["lastReading"][mapping["display_name"]] = payload[key]
+                        
+                        reading = {
+                            "payload_value": key,
+                            "display_name": mapping["display_name"],
+                            "unit": mapping["unit"]  # Add standardized unit
+                        }
+                        
+                        if "readings" in capabilities[dev_eui]:
+                            capabilities[dev_eui]["readings"].append(reading)
                         else:
-                            capabilities[dev_eui]["readings"] = [{
-                                "payload_value": key,
-                                "display_name": payload_to_display_name[key]
-                            }]
-                # For any information needed from the metadata
+                            capabilities[dev_eui]["readings"] = [reading]
+                
+                # Process metadata
                 for key in metadata.keys():
-                    if key in payload_to_display_name.keys():
-                        if "readings" in capabilities[dev_eui].keys():
-                            capabilities[dev_eui]["readings"].append({
-                                "payload_value": key,
-                                "display_name": payload_to_display_name[key]
-                            })
+                    if key in payload_mappings:
+                        mapping = payload_mappings[key]
+                        reading = {
+                            "payload_value": key,
+                            "display_name": mapping["display_name"],
+                            "unit": mapping["unit"]  # Add standardized unit
+                        }
+                        
+                        if "readings" in capabilities[dev_eui]:
+                            capabilities[dev_eui]["readings"].append(reading)
                         else:
-                            capabilities[dev_eui]["readings"] = [{
-                                "payload_value": key,
-                                "display_name": payload_to_display_name[key]
-                            }]
+                            capabilities[dev_eui]["readings"] = [reading]
+
         return jsonify({'status': 'success', 'capabilities': capabilities})
 
     except Exception as e:

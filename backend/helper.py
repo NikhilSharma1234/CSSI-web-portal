@@ -26,6 +26,56 @@ table = Table(
     autoload_with=engine
 )
 
+UNIT_STANDARDIZATION = {
+    
+    'celsius': '°C',
+    'fahrenheit': '°F',
+    'kelvin': 'K',
+    
+    'decibels': 'dB',
+    'decibel milliwatt': 'dBm',
+    
+    'percent': '%',
+    'microsiemens per centimeter': 'µS/cm',
+    'millisiemens per centimeter': 'mS/cm',
+    
+    'volt': 'V',
+    
+    'meter': 'm',
+    'kilogram': 'kg',
+    'second': 's',
+    'centimeter': 'cm',
+    'millimeter': 'mm'
+}
+
+PAYLOAD_TYPE_TO_UNIT = {
+    'temperature': '°C',
+    'temp_SOIL': '°C',
+    'water_SOIL': '%',
+    'conduct_SOIL': 'µS/cm',
+    'Bat': '%',
+    'bat': 'V',
+    'batteryCapacity': '%',
+    'BatV': '%',
+    'snr': 'dB',
+    'rssi': 'dBm'
+}
+
+def standardize_unit(payload_type: str, raw_unit: str) -> str:
+    if payload_type in PAYLOAD_TYPE_TO_UNIT:
+        return PAYLOAD_TYPE_TO_UNIT[payload_type]
+    
+    lower_unit = raw_unit.lower()
+    if lower_unit in UNIT_STANDARDIZATION:
+        return UNIT_STANDARDIZATION[lower_unit]
+    
+    if 'celsius' in lower_unit:
+        return '°C'
+    if 'fahrenheit' in lower_unit:
+        return '°F'
+    
+    return raw_unit
+
 def get_sensor_mapping():
     stmt = select(
             table.columns.type,
